@@ -10,7 +10,7 @@ import builtins as __builtin__
 bl_info = {
     "name": "Sharp Smash Suite",
     "author": "C#",
-    "version": (1, 0),
+    "version": (0, 5),
     "blender" : (2, 93, 0)
 }
 
@@ -56,7 +56,7 @@ def getTrueName(name):
 
 #Create Panel
 class SharpSmashSuite_MainPanel(bpy.types.Panel):
-    bl_label = "Sharp Smash Suite"
+    bl_label = "Sharp Smash Suite -β"
     bl_idname = "sharpsmashsuite.panel_main"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -72,7 +72,7 @@ class SharpSmashSuite_MainPanel(bpy.types.Panel):
             text='Open Wiki',
             icon='URL'
             )
-        op.url = 'www.google.com'
+        op.url = 'https://github.com/CSharpM7/SharpSmashSuite/wiki'
         
 class SharpSmashSuite_PanelRename(bpy.types.Panel):
     bl_label = "Renaming and Exporting"
@@ -90,38 +90,6 @@ class SharpSmashSuite_PanelRename(bpy.types.Panel):
         column.operator("sharpsmashsuite.list_operator", icon = "FILE")
         column.operator("sharpsmashsuite.rename_operator", icon = "SMALL_CAPS")
         
-class SharpSmashSuite_PanelObject(bpy.types.Panel):
-    bl_label = "Manipulate Objects"
-    bl_idname = "Swap Blendz"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "Sharp Smash Suite"
-    bl_parent_id = "sharpsmashsuite.panel_main"
-    bl_options = {'DEFAULT_CLOSED'}
-    
-    def draw(self,context):
-        layout = self.layout
-        
-        column = layout.column()
-        column.operator("sharpsmashsuite.separate_operator", icon = "MATERIAL")
-        column.operator("sharpsmashsuite.map_operator", icon = "GROUP_UVS")
-        column.operator("sharpsmashsuite.join_operator", icon = "OUTLINER_OB_MESH")
-        
-class SharpSmashSuite_PanelMisc(bpy.types.Panel):
-    bl_label = "Misc"
-    bl_idname = "sharpsmashsuite.panel_"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "UI"
-    bl_category = "Sharp Smash Suite"
-    bl_parent_id = "sharpsmashsuite.panel_main"
-    bl_options = {'DEFAULT_CLOSED'}
-    
-    def draw(self,context):
-        layout = self.layout
-        
-        column = layout.column()
-        column.operator("sharpsmashsuite.vertex_operator", icon = "GROUP_VERTEX")
-        column.operator("sharpsmashsuite.swap_operator", icon = "SPREADSHEET")  
         
     
 #Print to console and write to file
@@ -239,351 +207,19 @@ class SharpSmashSuite_OT_rename(Operator):
         self.report({'INFO'}, "Objects renamed")
         return {'FINISHED'}
         
-class SharpSmashSuite_OT_separate(Operator):
-    bl_label = "Separate and Preserve Materials"
-    bl_idname = "sharpsmashsuite.separate_operator"
-    bl_description = """In case Edit>Mesh>Seperate>By Material ends up unlinking materials from meshes
-    NOTE: This is poorly optimized, so save before running this"""
-    
-    
-    desiredMaterial = None
-    includeName: bpy.props.BoolProperty(name = "Include Original Name Prefix", default=False,
-    description = """Program will rename materials to objectName+materialName.
-    If false, will only rename to material name""")
-    replace: bpy.props.BoolProperty(name = "Replace Original", default=False)
-    
-    def execute(self,context):
-        
-        if (HasNoObjectsSelected(self)):
-            return {'FINISHED'}
-            
-        #Find the collection to store this object in, or if we should create a new one
-        old_collection = bpy.context.selected_objects[0].users_collection
-        new_collectionName = old_collection[0].name
-        if (self.replace == False):
-            new_collectionName = new_collectionName + " - Split"
-            
-        new_collection = bpy.data.collections.get(new_collectionName)
-        if (new_collection is None):
-            new_collection = bpy.data.collections.new(new_collectionName)
-            bpy.context.scene.collection.children.link(new_collection)
-            
-        #for each selected object...
-        for obj in bpy.context.selected_objects:
-            material_slots = obj.material_slots
-            
-            #Step one: Clone the object, we'll dissect this clone bit by bit
-            #so run time can be decreased from objs^mats^faces objs^mats^log(faces)
-            cloned_obj = obj.copy()
-            cloned_obj.data = obj.data.copy()
-            new_collection.objects.link(cloned_obj)
-
-            #Ignore those without a material
-            if (len(material_slots) < 2):
-                new_name = rename(obj,0,self.includeName)
-                cloned_obj.name = new_name
-                continue
-            
-            cloned_mesh = cloned_obj.data
-            cloned_bmesh = bmesh.new()
-            cloned_bmesh.from_mesh(cloned_obj.data)
-            #God I wish i just knew how to assign faces to a new object
-            
-            for mat_i in range (0, len(material_slots)): 
-                #Create a copy of the cloned object to be used in its own mesh
-                new_obj = cloned_obj.copy()
-                new_obj.data = cloned_obj.data.copy()
-                new_collection.objects.link(new_obj)
-
-                #give it a new name based on the material
-                #include the object prefix if desired
-                new_name = rename(obj,mat_i,self.includeName)
-                new_obj.name = new_name
-                
-                #Step twp: create new mesh and new bmesh, bmesh will be manipulated
-                new_mesh = new_obj.data
-                new_bmesh = bmesh.new()
-                new_bmesh.from_mesh(new_obj.data)
-                
-                # remove faces with other materials from bmesh
-                for f in new_bmesh.faces:
-                    if f.material_index != mat_i:
-                        new_bmesh.faces.remove(f)
-                verts = [v for v in new_bmesh.verts if not v.link_faces]
-                for v in verts:
-                    new_bmesh.verts.remove(v)
-                
-                for f in cloned_bmesh.faces:
-                    if f.material_index == mat_i:
-                        cloned_bmesh.faces.remove(f)
-                verts = [v for v in cloned_bmesh.verts if not v.link_faces]
-                for v in verts:
-                    cloned_bmesh.verts.remove(v)
-                    
-                cloned_bmesh.to_mesh(cloned_mesh)
-                
-                #apply bmesh to our new mesh
-                new_bmesh.to_mesh(new_mesh)
-                new_bmesh.free()
-                
-                #remove all other excess materials
-                new_obj.data.materials.clear()
-                new_obj.data.materials.append(material_slots[mat_i].material)
-             
-                
-            cloned_bmesh.free()
-            bpy.data.objects.remove(cloned_obj, do_unlink=True)
-            if (self.replace == True):
-                bpy.data.objects.remove(obj, do_unlink=True)
-             
-                
-            if (self.replace == True):
-                bpy.data.objects.remove(obj, do_unlink=True)
-        
-        
-        self.report({'INFO'}, "Objects seperated")
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        return context.window_manager.invoke_props_dialog(self)
-
-def renameMaps():
-    for obj in bpy.context.selected_objects: 
-        #layers[].active means the active UV layer!
-        #loop through each uv layer, 
-        #if it is the active UVmap, name it "map1"
-        #else name it to bake1
-        #else name it to map2-6
-        
-        #BE SURE TO NOT RENAME MAPS WITH MAP/BAKE/COLORSET
-        #maybe prompt menu to replace them?
-        
-        #also rename vertexcolors, the active one always to colorset1
-        #rename all of them?
-        baked=True
-        map=2
-        for uvmap in obj.data.uv_layers: 
-            if (uvmap.active_render):
-                uvmap.name = "map1"
-            elif (baked):
-                uvmap.name = "bake1"
-                baked=False
-            else:
-                uvmap.name = "map"+str(map)
-                map = map+1
-                
-        map=2
-        for colormap in obj.data.vertex_colors:
-            if (colormap.active_render):
-                colormap.name = "map1"
-            else:
-                colormap.name = "map"+str(map)
-                map = map+1
-    
-class SharpSmashSuite_OT_renameMaps(Operator):
-    bl_label = "Rename UV Maps"
-    bl_idname = "sharpsmashsuite.map_operator"
-    bl_description = """Renames UV Maps to map1, bake1, map(n); Color maps to colorset1,colorset(n).
-    Used with Join Like Objects and Swap Materials to preserve UVs/Vertex Colors.
-    Maps active in Render are assigned 1"""
-    desiredMaterial = None
-        
-    def execute(self,context):
-        if (HasNoObjectsSelected(self)):
-            return {'FINISHED'}
-        
-        renameMaps()
-        self.report({'INFO'}, "Maps renamed")
-        return {'FINISHED'}    
-
-class SharpSmashSuite_MENU_join(bpy.types.Menu):
-    bl_label = "Join Like Objects"
-    bl_idname = "sharpsmashsuite.join_menu"
-
-    def draw(self, context):
-        layout = self.layout
-
-        layout.label(text="WARNING", icon='ERROR')
-        layout.label(text="This operation will rename your UV maps! Click OK to proceed")
-        layout.operator("sharpsmashsuite.join_operator_confirm")
-
-
-class SharpSmashSuite_OT_join_confirm(Operator):
-    bl_label = "OK"
-    bl_idname = "sharpsmashsuite.join_operator_confirm"
-    
-    def execute(self,context):
-        if (HasNoObjectsSelected(self)):
-            return {'FINISHED'}
-        
-        #maps need to be renamed first to preserve UVs
-        renameMaps()
-        
-        scene = bpy.context.scene
-
-        #should look like {TrueName : Mesh}
-        objectsByName = {}
-        for obj in bpy.context.selected_objects:
-            if obj.type == 'MESH':
-                tName = getTrueName(obj.name)
-                value = objectsByName.setdefault(tName,[])
-                value.append(obj)
-                
-        
-        for trueName, objs in objectsByName.items():
-            
-            ctx = bpy.context.copy()
-
-            # one of the objects to join
-            ctx['active_object'] = objs[0]
-            ctx['selected_editable_objects'] = objs
-            
-            bpy.ops.object.join(ctx)
-            
-            ctx['active_object'].name = trueName
-
-        self.report({'INFO'}, "Objects joined")
-        return {'FINISHED'}
-    
-
-class SharpSmashSuite_OT_join(Operator):
-    bl_label = "Join Like Objects"
-    bl_idname = "sharpsmashsuite.join_operator"
-    bl_description = """Joins objects of like names"""
-    desiredMaterial = None
-        
-    def execute(self,context):
-        if (HasNoObjectsSelected(self)):
-            return {'FINISHED'}
-        
-        bpy.ops.wm.call_menu(name=SharpSmashSuite_MENU_join.bl_idname)
-        return {'FINISHED'}
-    
-class SharpSmashSuite_OT_swap(Operator):
-    bl_label = "Swap Materials"
-    bl_idname = "sharpsmashsuite.swap_operator"
-    bl_description = """(Might not be useful)
-    If you used the model importer and have smash materials, this will
-    reassign the materials and rename maps to their smash counterparts so you can export the mesh properly.
-    Does not convert materials"""
-    desiredMaterial = None
-    
-    def execute(self,context):
-        if (HasNoObjectsSelected(self)):
-            return {'FINISHED'}
-        
-        #maps need to be renamed to be compatible with smash blender tools
-        renameMaps()
-        #for each selected object...
-        for obj in bpy.context.selected_objects:
-            #get all the materials
-            material_slots = obj.material_slots
-            for objMaterialSlot in material_slots:
-            
-                objMaterial = objMaterialSlot.material
-                #let's get the material name, and drop the .00n
-                materialName = getTrueName(objMaterial.name)
-                #now find a mat that matches that name
-                desiredMaterial = bpy.data.materials.get(materialName)
-                #if it doesn't exist, skip this mat
-                if desiredMaterial is None:
-                    print(materialName," not found from ", obj.name)
-                    continue
-                
-                #now assign the new material
-                objMaterialSlot.material = desiredMaterial
-                print(objMaterial.name," set in", obj.name)
-
-        self.report({'INFO'}, "Materials Swapped")
-        return {'FINISHED'}
-        
-#This was suppose to be the optimized version of Separate, but I can't figure out
-#how to move Vertex Groups or Verticies to a new mesh
-class SharpSmashSuite_OT_vertex(Operator):
-    bl_label = "Vertex Group From Materials"
-    bl_idname = "sharpsmashsuite.vertex_operator"
-    bl_description = """(DEPRECATED)
-    Creates vertex groups from materials"""
-    
-    
-    desiredMaterial = None
-    includeName = True
-    #includeName: bpy.props.BoolProperty(name = "Include Original Name Prefix", default=False,
-    #description: """Program will rename materials to objectName+materialName.
-    #If false, will only rename to material name""")
-    #replace: bpy.props.BoolProperty(name = "Replace Original", default=False)
-    replace = False
-    
-    def execute(self,context):
-        
-        if (HasNoObjectsSelected(self)):
-            return {'FINISHED'}
-            
-        #Find the collection to store this object in, or if we should create a new one
-        old_collection = bpy.context.selected_objects[0].users_collection
-        new_collectionName = old_collection[0].name
-        if (self.replace == False):
-            new_collectionName = new_collectionName + " - Vertex"
-            
-        new_collection = bpy.data.collections.get(new_collectionName)
-        if (new_collection is None):
-            new_collection = bpy.data.collections.new(new_collectionName)
-            bpy.context.scene.collection.children.link(new_collection)
-            
-        #for each selected object...
-        for obj in bpy.context.selected_objects:
-            material_slots = obj.material_slots
-            #if there are less than two material slots, don't bother
-            if (len(material_slots) < 2):
-                continue
-            
-            #create a clone of the object, we'll dissect it in the next for loop
-            cloned_obj = obj.copy()
-            cloned_obj.data = obj.data.copy()
-            new_collection.objects.link(cloned_obj)
-                
-            for index, slot in enumerate(obj.material_slots):
-                verts = [v for f in cloned_obj.data.polygons 
-                if f.material_index == index for v in f.vertices]
-                
-                if len(verts):
-                    vg = obj.vertex_groups.get(slot.material.name)
-                    if vg is None: 
-                        vg = cloned_obj.vertex_groups.new(name=slot.material.name)
-                    vg.add(verts, 1.0, 'ADD')
-             
-                
-            #if (self.replace == True):               
-            #bpy.data.objects.remove(obj, do_unlink=True)
-                
-        self.report({'INFO'}, "Vertex Groups created")
-        return {'FINISHED'}
-
-    #def invoke(self, context, event):
-    #    return context.window_manager.invoke_props_dialog(self)
-        
-def draw_item(self, context):
-    layout = self.layout
-    layout.menu(SharpSmashSuite_MENU_join.bl_idname)
 
     
-classes = [SharpSmashSuite_MainPanel,SharpSmashSuite_PanelRename,SharpSmashSuite_PanelObject,SharpSmashSuite_PanelMisc,
-SharpSmashSuite_OT_swap,SharpSmashSuite_OT_list,SharpSmashSuite_OT_separate,
-SharpSmashSuite_OT_vertex,SharpSmashSuite_OT_rename,SharpSmashSuite_OT_renameMaps,
-SharpSmashSuite_OT_join,SharpSmashSuite_MENU_join,SharpSmashSuite_OT_join_confirm]
+classes = [SharpSmashSuite_MainPanel,SharpSmashSuite_PanelRename,
+SharpSmashSuite_OT_list,SharpSmashSuite_OT_rename]
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    # lets add ourselves to the main header
-    bpy.types.INFO_HT_header.append(draw_item)
     
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
-        
-
-    bpy.types.INFO_HT_header.remove(draw_item)
+ 
 
 if __name__ == "__main__":
     register()

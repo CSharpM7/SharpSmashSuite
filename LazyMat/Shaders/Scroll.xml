@@ -1,0 +1,101 @@
+  <material name="SFX_PBS_000000080009c100_#render#" label="#material#">
+    <param name="BlendState0">
+      <blend_state>
+        <SourceColor>One</SourceColor>
+        <Unk2>0</Unk2>
+        <DestinationColor>One</DestinationColor>
+        <Unk4>0</Unk4>
+        <Unk5>0</Unk5>
+        <Unk6>1</Unk6>
+        <Unk7>0</Unk7>
+        <Unk8>0</Unk8>
+        <Unk9>0</Unk9>
+        <Unk10>0</Unk10>
+        <Unk11>0</Unk11>
+        <Unk12>0</Unk12>
+      </blend_state>
+    </param>
+    <param name="CustomBoolean2">
+      <bool>true</bool>
+    </param>
+    <param name="CustomBoolean5">
+      <bool>true</bool>
+    </param>
+    <param name="CustomVector27">
+      <vector4>
+        <X>1</X>
+        <Y>0</Y>
+        <Z>0</Z>
+        <W>0</W>
+      </vector4>
+    </param>
+    <param name="CustomVector29">
+      <vector4>
+        <X>0</X>
+        <Y>0</Y>
+        <Z>0</Z>
+        <W>0</W>
+      </vector4>
+    </param>
+    <param name="CustomVector3">
+      <vector4>
+        <X>1</X>
+        <Y>1</Y>
+        <Z>1</Z>
+        <W>1</W>
+      </vector4>
+    </param>
+    <param name="CustomVector6">
+      <vector4>
+        <X>1</X>
+        <Y>1</Y>
+        <Z>0</Z>
+        <W>-1.03</W>
+      </vector4>
+    </param>
+    <param name="CustomVector8">
+      <vector4>
+        <X>1</X>
+        <Y>1</Y>
+        <Z>1</Z>
+        <W>1</W>
+      </vector4>
+    </param>
+    <param name="RasterizerState0">
+      <rasterizer_state>
+        <FillMode>Solid</FillMode>
+        <CullMode>Back</CullMode>
+        <DepthBias>0</DepthBias>
+        <Unk4>0</Unk4>
+        <Unk5>0</Unk5>
+        <Unk6>16777217</Unk6>
+        <Unk7>0</Unk7>
+        <Unk8>0</Unk8>
+      </rasterizer_state>
+    </param>
+    <param name="Sampler5">
+      <sampler>
+        <WrapS>Repeat</WrapS>
+        <WrapT>Repeat</WrapT>
+        <WrapR>Repeat</WrapR>
+        <MinFilter>LinearMipmapLinear</MinFilter>
+        <MagFilter>Linear</MagFilter>
+        <TextureFilteringType>Default2</TextureFilteringType>
+        <BorderColor>
+          <X>0</X>
+          <Y>0</Y>
+          <Z>0</Z>
+          <W>0</W>
+        </BorderColor>
+        <Unk11>0</Unk11>
+        <Unk12>2139095022</Unk12>
+        <LodBias>0</LodBias>
+        <MaxAnisotropy>2</MaxAnisotropy>
+      </sampler>
+    </param>
+    <param name="Texture5">
+      <string>
+        <Text>#texture#</Text>
+      </string>
+    </param>
+  </material>
