@@ -1,3 +1,8 @@
+#img2nutexb main program
+img2nutexb.exe
+*.txt
+*.ps1
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
