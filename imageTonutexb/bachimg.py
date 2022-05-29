@@ -6,6 +6,7 @@ import sys
 import pathlib
 import shutil
 import subprocess
+import imghdr
 
 from tkinter import *
 from tkinter import filedialog
@@ -197,6 +198,22 @@ textureListFile = open('textureList.txt','a+')
 textureListFile.close()
 readTexturesToGUI()
 
+imageExtensions = ["png", "jpg", "gif", "dds",
+                   "tga", "tiff", "tco", "bmp"]
+def ValidImage(img):
+    ext = img[len(img)-3:len(img)]
+    return ext in imageExtensions
+
+outputFilePath="output.txt"
+#create output file
+outputFile = open('output.txt','w+')
+outputFile.close()
+def printAndWrite(string):
+    print(string)
+    with open(outputFilePath, "a") as file:
+        file.write(string)
+        file.write("\n")
+        
 #main functions
 def run():    
     #run img for each file, assuming said file exists
@@ -213,9 +230,11 @@ def run():
     textures = textureListFile.readlines()
     textures = [texture.rstrip() for texture in textures]
     textureListFile.close()
-    
+
+    emptyList=False
     #if textureList is blank, set the target list to ALL the files in a folder
     if (len(textures)<1):
+        emptyList=True
         mypath = root.searchDir
         files = [f for f in listdir(mypath) if isfile(join(mypath, f))]
         for f in files:
@@ -248,9 +267,14 @@ def run():
                         #update the item in the list
                         textures[i] = t
                         break
-                    
+             
         #create name of search target
         targetFile = root.searchDir + "/" + t
+        
+        #if it's not an image file, ignore it
+        if (not ValidImage(targetFile)):
+            printAndWrite("Skipped "+t)
+            continue
         
         #create new name for nutexb texture
         split_tup = os.path.splitext(t)
@@ -262,30 +286,21 @@ def run():
             shutil.copy(blankFile,newNutexb)
             #run program on it depending on if the text file ends in dds
             subcall = [imgnutexbLocation,"-n "+split_tup[0],targetFile,newNutexb]
-            print(split_tup[1])
             if (split_tup[1] == ".dds"):
-                print("dds")
                 subcall.append("-d")
                 subcall.append("-u")
-            else:
-                print("png")
-            #subprocess.call([imgnutexbLocation,"-n "+split_tup[0],targetFile,newNutexb])
-            #result = subprocess.run(subcall, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-            #print(result)
-            outputFile = open('output.txt','a+')
-            outputFile.close()
-            errorFile = open('errors.txt','a+')
-            errorFile.close()
-            with open('output.txt', 'w+') as stdout_file, open('errors.txt', 'w+') as stderr_file:
-                process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stderr_file, text=True)
+            #output any errors to a textfile
+            with open('output.txt', 'a+') as stdout_file:
+                process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
                 print(process_output.__dict__)
+                
+            printAndWrite("Created "+newNutexb)
         else:
-            print(targetFile + " does not exist")
+            printAndWrite(targetFile + " does not exist")
         
-        #print(newNutexb)
 
     #Only rewrite if necessary
-    if (rewriteList==True):
+    if (rewriteList==True and emptyList==False):
         textureListFile = open('textureList.txt','w')
         textureListFile.close()
         #Rewrite textureListFile
@@ -299,7 +314,7 @@ def run():
         readTexturesToGUI()
 
     root.withdraw()
-    #sys.exit("success")
+    sys.exit("success")
 
 #create run button
 run_btn = Button(searchFrame, text="Run", command=run,anchor=S)
