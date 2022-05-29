@@ -17,7 +17,7 @@ config = configparser.ConfigParser()
 
 #create initial GUI settings
 root = Tk()
-root.title("My Title")
+root.title("img2nutexbGUI")
 root.iconbitmap("icon.ico")
 root.width=600
 root.height=250
