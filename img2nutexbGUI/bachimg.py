@@ -208,14 +208,16 @@ outputFilePath="output.txt"
 #create output file
 outputFile = open('output.txt','w+')
 outputFile.close()
-def printAndWrite(string):
+def printAndWrite(string,color="black"):
     print(string)
+    status.config(text = string, fg = color)
     with open(outputFilePath, "a") as file:
         file.write(string)
         file.write("\n")
         
 #main functions
 def run():    
+    printAndWrite("")
     #run img for each file, assuming said file exists
     if (not HasValidSearch()):
         message("ERROR","Search or Destination path invalid")
@@ -245,6 +247,7 @@ def run():
         textures.remove("")
 
     rewriteList=False
+    printAndWrite("Running...")
     #For each texture, see if we can run the program
     for i in range(len(textures)):
         t = textures[i]
@@ -294,7 +297,7 @@ def run():
                 process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
                 print(process_output.__dict__)
                 
-            printAndWrite("Created "+newNutexb)
+            printAndWrite("Created "+split_tup[0])
         else:
             printAndWrite(targetFile + " does not exist")
         
@@ -313,8 +316,9 @@ def run():
         textureListFile.close()
         readTexturesToGUI()
 
-    root.withdraw()
-    sys.exit("success")
+    #root.withdraw()
+    #sys.exit("success")
+    printAndWrite("Success!")
 
 #create run button
 run_btn = Button(searchFrame, text="Run", command=run,anchor=S)
