@@ -32,6 +32,10 @@ def print(*args, **kwargs):
 
     console_print(*args, **kwargs) # to py consoles
     __builtin__.print(*args, **kwargs) # to system console
+    
+def report(self,type,message):
+    self.report(type,message)
+    print(message)
 
 #Show message to user
 def ShowMessageBox(message = "", title = "Message Box", icon = 'INFO'):
@@ -44,7 +48,7 @@ def ShowMessageBox(message = "", title = "Message Box", icon = 'INFO'):
 #
 def HasNoObjectsSelected(self):
     if (len(bpy.context.selected_objects) == 0):
-        self.report({'WARNING'}, "No objects selected")
+        report(self,{'WARNING'}, "No objects selected")
         return True
     return False
 
@@ -204,7 +208,7 @@ class SharpSmashSuite_OT_list(Operator):
         for m, t in dictionary.items():
             printAndWrite(t,self.filepath)
         printAndWrite("----------------------",self.filepath)
-        self.report({'INFO'}, "Materials saved to file and printed to console")            
+        report(self,{'INFO'}, "Materials saved to file and printed to console")            
         return {'FINISHED'}
     
     def invoke(self,context,event):
@@ -237,7 +241,7 @@ class SharpSmashSuite_OT_rename(Operator):
         for obj in bpy.context.selected_objects:
             obj.name = rename(obj,0,False)
             
-        self.report({'INFO'}, "Objects renamed")
+        report(self,{'INFO'}, "Objects renamed")
         return {'FINISHED'}
         
 class SharpSmashSuite_OT_separate(Operator):
@@ -342,7 +346,7 @@ class SharpSmashSuite_OT_separate(Operator):
                 bpy.data.objects.remove(obj, do_unlink=True)
         
         
-        self.report({'INFO'}, "Objects seperated")
+        report(self,{'INFO'}, "Objects seperated")
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -394,7 +398,7 @@ class SharpSmashSuite_OT_renameMaps(Operator):
             return {'FINISHED'}
         
         renameMaps()
-        self.report({'INFO'}, "Maps renamed")
+        report(self,{'INFO'}, "Maps renamed")
         return {'FINISHED'}    
 
 class SharpSmashSuite_MENU_join(bpy.types.Menu):
@@ -405,7 +409,7 @@ class SharpSmashSuite_MENU_join(bpy.types.Menu):
         layout = self.layout
 
         layout.label(text="WARNING", icon='ERROR')
-        layout.label(text="This operation will rename your UV maps! Click OK to proceed")
+        layout.label(text="This operation will rename your UV maps AND your objects! Click OK to proceed")
         layout.operator("sharpsmashsuite.join_operator_confirm")
 
 
@@ -416,41 +420,47 @@ class SharpSmashSuite_OT_join_confirm(Operator):
     def execute(self,context):
         if (HasNoObjectsSelected(self)):
             return {'FINISHED'}
+        print("Joining objects")
         
         #maps need to be renamed first to preserve UVs
-        renameMaps()
-        
-        scene = bpy.context.scene
-
-        #should look like {TrueName : Mesh}
+        renameMaps()     
+            
+        #create a list of objects based on their material
+        #should look like {MaterialName : Mesh}
         objectsByName = {}
         for obj in bpy.context.selected_objects:
             if obj.type == 'MESH':
-                tName = getTrueName(obj.name)
+                tName = rename(obj,0,False)
                 value = objectsByName.setdefault(tName,[])
                 value.append(obj)
                 
         
         for trueName, objs in objectsByName.items():
-            
+                
             ctx = bpy.context.copy()
 
             # one of the objects to join
             ctx['active_object'] = objs[0]
             ctx['selected_editable_objects'] = objs
             
+            #join object and rename it to the material
             bpy.ops.object.join(ctx)
+            newObject = ctx['active_object']
+            newObject.name = trueName
             
-            ctx['active_object'].name = trueName
+            #remove excess materials
+            newObject.active_material_index = 0
+            for i in range(1,len(newObject.material_slots)):
+                bpy.ops.object.material_slot_remove({'object': newObject}) 
 
-        self.report({'INFO'}, "Objects joined")
+        report(self,{'INFO'}, "Objects joined")
         return {'FINISHED'}
     
 
 class SharpSmashSuite_OT_join(Operator):
     bl_label = "Join Like Objects"
     bl_idname = "sharpsmashsuite.join_operator"
-    bl_description = """Joins objects of like names"""
+    bl_description = """Joins objects that have the same material"""
     desiredMaterial = None
         
     def execute(self,context):
@@ -495,7 +505,7 @@ class SharpSmashSuite_OT_swap(Operator):
                 objMaterialSlot.material = desiredMaterial
                 print(objMaterial.name," set in", obj.name)
 
-        self.report({'INFO'}, "Materials Swapped")
+        report(self,{'INFO'}, "Materials Swapped")
         return {'FINISHED'}
         
 #This was suppose to be the optimized version of Separate, but I can't figure out
@@ -557,7 +567,7 @@ class SharpSmashSuite_OT_vertex(Operator):
             #if (self.replace == True):               
             #bpy.data.objects.remove(obj, do_unlink=True)
                 
-        self.report({'INFO'}, "Vertex Groups created")
+        report(self,{'INFO'}, "Vertex Groups created")
         return {'FINISHED'}
 
     #def invoke(self, context, event):
