@@ -13,3 +13,7 @@ This program hasn't been thoroughly tested, but I figured someone could be able 
 You'll need to have your nutexb files created beforehand, you might want to look at jam's img2nutexb to batch convert images.  
 You also need to have MatLab somewhere on your machine. Grab it here.  
 You'll also want StudioSB to be able to assign materials to your meshes after you're done.
+
+## Full Usage
+
+Check the wiki [here](https://github.com/CSharpM7/SharpSmashSuite/wiki/LazyMat)
