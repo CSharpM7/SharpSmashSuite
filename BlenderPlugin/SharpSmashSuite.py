@@ -376,13 +376,13 @@ def renameMaps():
         map=2
         for colormap in obj.data.vertex_colors:
             if (colormap.active_render):
-                colormap.name = "map1"
+                colormap.name = "colorSet1"
             else:
-                colormap.name = "map"+str(map)
+                colormap.name = "colorSet"+str(map)
                 map = map+1
     
 class SharpSmashSuite_OT_renameMaps(Operator):
-    bl_label = "Rename UV Maps"
+    bl_label = "Rename Maps"
     bl_idname = "sharpsmashsuite.map_operator"
     bl_description = """Renames UV Maps to map1, bake1, map(n); Color maps to colorset1,colorset(n).
     Used with Join Like Objects and Swap Materials to preserve UVs/Vertex Colors.
