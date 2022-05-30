@@ -14,6 +14,6 @@ You'll need to have your nutexb files created beforehand, you might want to look
 You also need to have MatLab somewhere on your machine. Grab it here.  
 You'll also want StudioSB to be able to assign materials to your meshes after you're done.
 
-## Full Usage
+## Usage
 
 Check the wiki [here](https://github.com/CSharpM7/SharpSmashSuite/wiki/LazyMat)
