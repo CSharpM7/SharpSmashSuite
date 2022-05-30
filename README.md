@@ -1,7 +1,5 @@
 # SharpSmashSuite
 
-A suite of programs dedicated to efficient model importing and iteration.
-
 ## Required Software
 
 Tested on Windows, but should work on most OSs that can run Python 3.9+
