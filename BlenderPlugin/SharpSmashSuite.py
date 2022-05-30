@@ -409,7 +409,7 @@ class SharpSmashSuite_MENU_join(bpy.types.Menu):
         layout = self.layout
 
         layout.label(text="WARNING", icon='ERROR')
-        layout.label(text="This operation will rename your UV maps AND your objects! Click OK to proceed")
+        layout.label(text="This operation will rename your UV maps, Vertex Color maps AND Objects! Click OK to proceed")
         layout.operator("sharpsmashsuite.join_operator_confirm")
 
 
