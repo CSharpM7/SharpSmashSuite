@@ -1,5 +1,7 @@
 # SharpSmashSuite
 
+![](https://user-images.githubusercontent.com/13909643/170925201-fde9546b-fd43-4415-b293-c594634fb7bd.png)
+
 ## Required Software
 
 Tested on Windows, but should work on most OSs that can run Python 3.9+
@@ -10,9 +12,9 @@ Python 3.9+
 
 [ssbh\_data\_py](https://github.com/ScanMountGoat/ssbh_data_py) - Running LazyNumdlb
 
-[StudioSB](https://github.com/Ploaj/StudioSB) - Importing models and creating numdlb files
+[MatLab and CrossMod](https://github.com/Ploaj/SSBHLib)  - (Not the math software) Running LazyMat and previewing models
 
-[CrossMod](https://github.com/Ploaj/SSBHLib) - Previewing models
+[StudioSB](https://github.com/Ploaj/StudioSB) - Importing models and creating numdlb files
 
 ## Installation
 
