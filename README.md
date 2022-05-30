@@ -12,7 +12,7 @@ Python 3.9+
 
 [ssbh\_data\_py](https://github.com/ScanMountGoat/ssbh_data_py) - Running LazyNumdlb
 
-[StudioSB](https://github.com/Ploaj/StudioSB) \- Importing models and creating numdlb files
+[StudioSB](https://github.com/Ploaj/StudioSB) - Importing models and creating numdlb files
 
 [CrossMod](https://github.com/Ploaj/SSBHLib) - Previewing models
 
@@ -34,7 +34,7 @@ Our end goal is to be able to quickly prototype stage designs through the use of
 
 1.  Blender SSS - Prepare your models. This blender program can properly separate objects by material, group objects by material without losing UV maps, rename meshes to their material's name, and export a list of material and texture names
 2.  LazyMat - Create a numatb file. You'll use the exported material list to fill this out. This can be customized to keep a list of shaders.
-3.  Img2nutexbGUI - Convert images to nutexb files
+3.  Img2nutexbGUI - Convert several images at once to nutexb files
 4.  StudioSB - Import your meshes from Blender, export a numdlb file
 5.  LazyNumdlb - Reassigns meshs' their material label based on that mesh's name. This only works if Blender SSS was used on the mesh
 6.  CrossMod - After using LazyMat, LazyNumdlb, and StudioSB,  preview the model
