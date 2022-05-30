@@ -208,6 +208,7 @@ class SharpSmashSuite_OT_list(Operator):
         return {'FINISHED'}
     
     def invoke(self,context,event):
+        self.filepath = "materials.txt"
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
    
