@@ -11,3 +11,4 @@
 This is a patch file for the object exporter in Blender to make it compatible with the Suite. Normally, blender formats obj meshes like "objectname+objectmesh". This py script makes it so it only includes the object's name. Place it in your Blender's io\_scene\_obj folder, it might be located here:
 
 C:\\Program Files\\Blender Foundation\\Blender 2.93\\2.93\\scripts\\addons\\io\_scene\_obj
+
