@@ -1,5 +1,7 @@
 # SharpSmashSuite
 
+![](https://user-images.githubusercontent.com/13909643/170925201-fde9546b-fd43-4415-b293-c594634fb7bd.png)
+
 ## Required Software
 
 Tested on Windows, but should work on most OSs that can run Python 3.9+
