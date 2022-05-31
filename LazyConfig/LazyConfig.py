@@ -90,7 +90,8 @@ def scanSubFolders(dir,modelFolders):
 subfolders,modelFolders = scanSubFolders(root.searchDir,[])
 #trims a file/folder name to stage/*
 def trimName(file):
-    prefix = (file.find('stage'))
+    print(file)
+    prefix = (file.find('stage\\'))
     newName = file[prefix:len(file)]
     newName = newName.replace("\\","/")
     return newName

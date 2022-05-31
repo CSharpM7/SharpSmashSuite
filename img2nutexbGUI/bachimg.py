@@ -11,6 +11,7 @@ import imghdr
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter.scrolledtext import ScrolledText
 
 import configparser
 config = configparser.ConfigParser()
@@ -148,9 +149,9 @@ pythonInfo = "Python: " + sys.version
 status = Label(root, text=truncate(pythonInfo,E,14,False), bd=1, relief=SUNKEN, anchor=E)
 status.pack(side = BOTTOM, fill=X)
 
-scrollFrame = PanedWindow(orient = VERTICAL,borderwidth=10,width = 40)  
-scrollFrame.pack(side = RIGHT,fill = Y, expand = 1)  
-scroll = Scrollbar(scrollFrame)
+#scrollFrame = PanedWindow(orient = VERTICAL,borderwidth=10,width = 40)  
+#scrollFrame.pack(side = RIGHT,fill = Y, expand = 1)  
+#scroll = Scrollbar(scrollFrame)
 #scroll.pack(side = RIGHT, fill=Y)
 
 searchFrame = PanedWindow(orient = VERTICAL,borderwidth=10,width = root.width/2)  
@@ -173,13 +174,13 @@ listFrame.pack(side = TOP,fill = Y, expand = 1)
 listFrame_label = Label(root, text="Files to Find (leave blank for all files)", bd=1, relief=SUNKEN)
 listFrame.add(listFrame_label)   
 
-textureEntry = Text(listFrame, bd = 5)  
+textureEntry = ScrolledText(listFrame, bd = 2)  
 listFrame.add(textureEntry)
 
-textureEntry.configure(yscrollcommand=scroll.set)
+#textureEntry.configure(yscrollcommand=scroll.set)
   
-scroll.config(command=textureEntry.yview,width=40)
-scrollFrame.add(scroll)
+#scroll.config(command=textureEntry.yview,width=40)
+#scrollFrame.add(scroll)
     
 #populate textureEntry with textureFile contents
 def readTexturesToGUI():
