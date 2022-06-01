@@ -6,6 +6,7 @@ from os import listdir
 from os.path import isfile, join
 
 import ssbh_data_py
+import sqlite3
 
 from tkinter import *
 from tkinter import ttk
@@ -54,11 +55,17 @@ def NewNumatb():
     root.numatb = ""
     #now refresh GUI and whatnot
     RefreshGUI()
+    ChangedNumatb()
 
 root.matl = None
 root.filetypes = (
+    ('All File Types', '*.numatb *numatb.bk'),
     ('Material File', '*.numatb'),
+    ('Backup Matl', '*numatb.bk')
 )
+root.filenumatb = [
+    root.filetypes[1]
+]
 def OpenNumatb():
     root.numatb = filedialog.askopenfilename(title = "Search",filetypes=root.filetypes)
     if (root.numatb == ""):
@@ -75,7 +82,9 @@ def OpenNumatb():
     RefreshGUI()
 
 def SaveAsNumatb():
-    file = filedialog.asksaveasfile(filetypes = root.filetypes, defaultextension = root.filetypes)
+    file = filedialog.asksaveasfile(filetypes = root.filenumatb, defaultextension = root.filenumatb)
+    if (file is None):
+        return
     root.numatb = file.path
     print(root.numatb)
     SaveNumatb(False)
@@ -88,8 +97,11 @@ def SaveNumatb(backUp=True):
         backUp.save(backupLocation)
     # Save any changes made to the root.matl.
     root.matl.save(root.numatb)
+    root.title(root.title().replace("*",""))
     message("Saved!")
 
+def ChangedNumatb():
+    root.title(root.title()+"*")
 
 
 #truncate strings for labels
@@ -120,8 +132,8 @@ def RefreshGUI():
     isNewFile = (root.numatb == "")
 
     #Change header text based on openfile
-    newFileText = "" if isNewFile else ":"+truncate(root.numatb,limit=30) 
-    root.title(string="numatbGUI"+newFileText)
+    newFileText = "New File" if isNewFile else truncate(root.numatb,limit=40) 
+    root.matlLabel.config(text=newFileText)
 
     #gray out Save based on newFile
     saveState = "disabled" if isNewFile else "normal"
@@ -157,6 +169,7 @@ def RefreshGUI_Info():
     #Clear any prior information
     root.shaderButton.config(text = "")
     root.renderOptions.set("")
+    root.renderOptions['values'] = []
     clearParamText();
     #if a material is not selected, exit
     selection = getSelectedMaterial()
@@ -167,6 +180,13 @@ def RefreshGUI_Info():
     #get shader and render name, set names
     shaderName,renderName = GetShaderNames(entry.shader_label)
     root.shaderButton.config(text = shaderName)
+
+    #repopulate renderOptions combobox and set to current value
+    root.renderOptions['values'] = ('opaque', 
+                          'sort',
+                          'near',
+                          'far')
+
     renderValue = root.renderOptions['values'].index(renderName)
     root.renderOptions.current(renderValue)
     #fill out parameter box
@@ -211,8 +231,8 @@ status.pack(side = BOTTOM, fill=X)
 
 fr_Material = PanedWindow(orient = VERTICAL,borderwidth=10,width = root.width/2)  
 fr_Material.pack(side = LEFT, fill = BOTH, expand = 1)  
-fr_Material_label = Label(root, text="List of Materials", bd=1, relief=SUNKEN, anchor=N)
-fr_Material.add(fr_Material_label)
+root.matlLabel = Label(root, text="", bd=1, relief=SUNKEN, anchor=N)
+fr_Material.add(root.matlLabel)
 
 def getSelectedMaterial():
     selection = root.list_Material.curselection()
@@ -271,12 +291,48 @@ def DuplicateMaterial():
 
     newEntry.material_label = currentEntry.material_label + "-1"
     root.matl.entries.insert(selection+1,newEntry)
-    newEntry.vectors[0].data = [2.0,1.0,0.0,1.0]
-    RefreshGUI()
+    #newEntry.vectors[0].data = [2.0,1.0,0.0,1.0]
+    RefreshGUI()    
+    ChangedNumatb()
 
+root.popup = None
+
+def RenameMaterial():
+    root.deiconify()
+    selection = getSelectedMaterial()
+    if (selection <0):
+        return
+
+    entry = root.matl.entries[selection]
+    newName = root.popup.entryLabel.get()
+    entry.material_label = newName
+
+    root.popup.destroy()
+
+    root.list_Material.delete(selection)
+    root.list_Material.insert(selection,newName)
+    root.list_Material.select_set(selection)
+    
+    ChangedNumatb()
+
+def RenameMaterialPopUp():
+    root.popup = Toplevel()
+    selection = getSelectedMaterial()
+    if (selection <0):
+        return
+
+    entry = root.matl.entries[selection]
+
+    root.popup.title("Rename")
+
+    root.popup.entryLabel = Entry(root.popup, width =50)
+    root.popup.entryLabel.pack()
+    root.popup.entryLabel.insert(0, entry.material_label)
+    button = Button(root.popup, text="Rename", command=RenameMaterial).pack()
+    root.withdraw();
 
 menu_listMaterial = Menu(root, tearoff = 0)
-menu_listMaterial.add_command(label ="Rename")
+menu_listMaterial.add_command(label ="Rename", command = RenameMaterialPopUp)
 menu_listMaterial.add_command(label ="Duplicate", command = DuplicateMaterial)
 menu_listMaterial.add_separator()
 menu_listMaterial.add_command(label ="Delete", command=RemoveMaterial)
@@ -300,9 +356,164 @@ fr_Info.add(fr_Shader)
 
 shaderLabel = Label(fr_Shader, text="Shader:")
 shaderLabel.pack(side = LEFT, padx=10)
-root.shaderButton = Button(fr_Shader, text="asdasdasdasd", command=donothing)
+
+
+def GetShader(shaderName):
+    shaderName = shaderName
+    connection = sqlite3.connect("Nufx.db")
+    cursor = connection.cursor()
+    cursor.execute("""SELECT * FROM ShaderProgram WHERE Name = ?""", (shaderName,))
+    records = cursor.fetchall()
+    #just take the first one
+    if (len(records)==0):
+        return None, None;  
+    else:
+        shader = records[0]
+        return shader[0], shader[1];
+
+def CreateParametersFromShader(material,shaderName="",shaderID=-1):
+    connection = sqlite3.connect("Nufx.db")
+    cursor = connection.cursor()
+    query = """SELECT ParamID FROM MaterialParameter WHERE ShaderProgramID IN (
+        SELECT ID
+        FROM ShaderProgram
+        WHERE Name = ?
+        )"""
+    qfilter = shaderName
+    if (shaderID!=""):
+        query = """SELECT ParamID FROM MaterialParameter WHERE ShaderProgramID = ?"""
+        qfilter = shaderID
+    cursor.execute(query, (qfilter,))
+    records = cursor.fetchall()
+    params = []
+    for r in records:
+        paramType = ssbh_data_py.matl_data.ParamId.from_value(r[0])
+        #print(paramType.name)
+        params.append(paramType)
+    return params
+
+
+
+
+#Create Parameters
+def CreateBlendState(param,matl):
+    #needs to be queried from smush_materials to create default
+    #newObject = ssbh_data_py.matl_data.BlendStateParamm(param,data)
+    #matl.blend_states.append(newObject)
+
+def CreateRasterizerState(param,matl):
+    #needs to be queried from smush_materials to create default
+    #newObject = ssbh_data_py.matl_data.RasterizerStateParam(param,data)
+    #matl.rasterizer_states.append(newObject)
+
+def CreateSampler(param,matl):
+    #needs to be queried from smush_materials to create default
+    data = ssbh_data_py.matl_data.SamplerData()
+    newObject = ssbh_data_py.matl_data.SamplerParam(param,data)
+    matl.samplers.append(newObject)
+
+def CreateFloat(param,matl):
+    data = 1.0
+    newObject = ssbh_data_py.matl_data.FloatParam(param,data)
+    matl.floats.append(newObject)
+
+def CreateBool(param,matl):
+    data = 1.0
+    newObject = ssbh_data_py.matl_data.BooleanParam(param,data)
+    matl.booleans.append(newObject)
+
+def CreateVector(param,matl):
+    #default value idk
+    data = [1.0,1.0,1.0,0.0]
+    newObject = ssbh_data_py.matl_data.Vector4Param(param,data)
+    matl.vectors.append(newObject)
+
+def CreateTexture(param,matl):
+    data = r"/common/shader/sfxPBS/default_Gray"
+    newObject = ssbh_data_py.matl_data.TextureParam(param,data)
+    matl.textures.append(newObject)
+
+def ParameterError(param,matl):
+    message(type="error",text="wtf is that parameter?")
+    root.withdraw()
+    sys.exit("unknown parameter")
+
+def ChangeShader():
+    root.deiconify()
+    selection = getSelectedMaterial()
+    if (selection <0):
+        return
+
+    #Check to see if shader label is valid, if not, return to normal
+    newName = root.popup.entryLabel.get()
+    root.popup.destroy()
+
+    newShaderID,newShaderName = GetShader(newName)
+    if (newShaderName == None):
+        message(type = "error", text = "Not a valid shader!")
+        return
+
+    #create new name for label and update GUI
+    entry = root.matl.entries[selection]
+    shaderName,renderName = GetShaderNames(entry.shader_label)
+    entry.shader_label = newName+"_"+renderName
+    root.shaderButton.config(text = newName)
+    #NOW THE FUN PART: Reassign ALLLLLLLLLLLL parameters :D
+
+    newEntry = ssbh_data_py.matl_data.MatlEntryData(entry.material_label,entry.shader_label)
+
+    parameters = CreateParametersFromShader(entry,shaderID=newShaderID)
+
+    paramTypes = {
+        "BlendState" : CreateBlendState,
+        "RasterizerState" : CreateRasterizerState,
+        "CustomFloat" : CreateFloat,
+        "CustomBoolean" : CreateBool,
+        "CustomVector" : CreateVector,
+        "Sampler" : CreateSampler,
+        "Texture" : CreateTexture
+    }
+    for p in parameters:
+        #removed Digits
+        paramName = p.name
+        paramTypeString = ''.join([i for i in paramName if not i.isdigit()])
+        paramTypes.get(paramTypeString, ParameterError)(p,newEntry)
+
+
+    root.matl.entries.pop(selection)
+    root.matl.entries.insert(selection,newEntry)
+    RefreshGUI()
+    root.list_Material.select_set(selection)
+    RefreshGUI_Info()
+
+
+def ChangeShaderPopUp():
+    selection = getSelectedMaterial()
+    if (selection <0):
+        return
+
+    res = messagebox.askyesno(root.title(), 'Changing the shader will clear your current values! Proceed?',icon ='warning')
+    if res == False:
+        return
+
+    root.popup = Toplevel()
+    selection = getSelectedMaterial()
+    if (selection <0):
+        return
+
+    entry = root.matl.entries[selection]
+    shaderName,renderName = GetShaderNames(entry.shader_label)
+
+    root.popup.title("Change Shader")
+
+    root.popup.entryLabel = Entry(root.popup, width =50)
+    root.popup.entryLabel.pack()
+    root.popup.entryLabel.insert(0, shaderName)
+    button = Button(root.popup, text="Change", command=ChangeShader).pack()
+    root.withdraw();
+
+root.shaderButton = Button(fr_Shader, command=ChangeShaderPopUp)
 root.shaderButton.pack(side = RIGHT, fill = X, expand=1)
-#fr_Info.add(shaderButton)
 
 fr_Render = Frame(fr_Info)
 fr_Info.add(fr_Render)
@@ -318,15 +529,13 @@ def onRenderChanged(event):
     entry = root.matl.entries[selection]
     shaderName,renderName = GetShaderNames(entry.shader_label)
     entry.shader_label = shaderName + "_" + root.renderOptions.get()
-    print(entry.shader_label)
+    print(entry.shader_label)    
+    ChangedNumatb()
 
 
 root.renderOptions = ttk.Combobox(fr_Render, width = 10, textvariable = n)
 # Adding combobox drop down list
-root.renderOptions['values'] = ('opaque', 
-                          'sort',
-                          'near',
-                          'far')
+root.renderOptions['values'] = []
 root.renderOptions.current()
 root.renderOptions.pack(side = RIGHT)
 root.renderOptions.bind("<<ComboboxSelected>>", onRenderChanged)
@@ -346,6 +555,10 @@ fr_Info.add(root.paramList)
 if (os.path.isfile(root.numatb)):
     root.matl = ssbh_data_py.matl_data.read_matl(root.numatb)
     RefreshGUI()
+
+
+#root.list_Material.select_set(2)
+#ChangeShaderPopUp()
 
 root.mainloop()
 #root.withdraw()
