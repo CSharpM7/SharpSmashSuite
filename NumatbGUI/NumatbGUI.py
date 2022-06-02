@@ -4,6 +4,7 @@ import sys
 import copy
 from os import listdir
 from os.path import isfile, join
+import subprocess
 
 import ssbh_data_py
 import sqlite3
@@ -17,10 +18,12 @@ import webbrowser
 
 import configparser
 config = configparser.ConfigParser()
+import xml.etree.ElementTree as ET
 
 #create GUI window
 root = Tk()
-root.title("numatbGUI")
+appName = "numatbGUI"
+root.title(appName)
 root.iconbitmap("icon.ico")
 root.width=600
 root.height=250
@@ -31,7 +34,8 @@ defaultLocation = os.getcwd() + "\model.numatb"
 defaultConfig = configparser.ConfigParser()
 defaultConfig['DEFAULT'] = {
     'numatbLocation': defaultLocation,
-    'presetLocation' : ""
+    'presetLocation' : "",
+    'matlabLocation' : "",
     }
 
 def CreateConfig():
@@ -45,6 +49,7 @@ if (not os.path.isfile(os.getcwd() + r"\config.ini")):
     CreateConfig()
 config.read('config.ini')
 root.numatb = config["DEFAULT"]["numatbLocation"]
+root.presetNumatb = config["DEFAULT"]["presetLocation"]
 
 
 # numatb file IO
@@ -58,6 +63,7 @@ def NewNumatb():
     ChangedNumatb()
 
 root.matl = None
+root.preset = None
 root.filetypes = (
     ('All File Types', '*.numatb *numatb.bk'),
     ('Material File', '*.numatb'),
@@ -66,28 +72,103 @@ root.filetypes = (
 root.filenumatb = [
     root.filetypes[1]
 ]
-def OpenNumatb():
-    root.numatb = filedialog.askopenfilename(title = "Search",filetypes=root.filetypes)
-    if (root.numatb == ""):
-        return
+root.fileexe = (
+    ('MatLab exe', '*.exe'),
+)
 
-    #only set configuration on opening
-    config.set("DEFAULT","numatbLocation",root.numatb)
+def SetPreset():
+    numatb = filedialog.askopenfilename(title = "Search",filetypes=root.filetypes)
+    if (numatb == ""):
+        return
+    root.presetNumatb = numatb
+    #only set configuration on opening, or saving as
+    config.set("DEFAULT","presetLocation",root.presetNumatb)
     with open('config.ini', 'w+') as configfile:
         config.write(configfile)
+
+    #read in data
+    root.preset = ssbh_data_py.matl_data.read_matl(root.presetNumatb)
+    #now refresh GUI and whatnot
+    UpdatePresetMenus()
+    message("Preset Updated")
+
+
+def ExportPreset():
+    matLab = config["DEFAULT"]["matlabLocation"]
+    if (not os.path.isfile(matLab)):
+        message("Please select your MatLab.exe file")
+        matLab = filedialog.askopenfilename(filetypes=root.fileexe)
+        if (not os.path.isfile(matLab)):
+            message(type="error",text="Invalid matlab file")
+            return
+        else:
+            config.set("DEFAULT","matlabLocation",matLab)
+            with open('config.ini', 'w+') as configfile:
+                config.write(configfile)
+
+    if (root.preset == ""):
+        return
+    exportDir = filedialog.askdirectory(title = "Select a folder to export to")
+    if (exportDir == ""):
+        message(type="error",text="Invalid folder")
+        return
+
+    #create output file
+    outputFile = open('output.txt','w+')
+    outputFile.close()
+    #runmatlab
+    exportLocation = root.presetNumatb.replace("numatb","xml")
+    subcall = [matLab,root.presetNumatb,exportLocation]
+    with open('output.txt', 'a+') as stdout_file:
+        process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+        print(process_output.__dict__)
+
+    file = open(exportLocation, encoding='utf-8', errors='replace')
+    context = ET.iterparse(file, events=('end',))
+    for event, elem in context:
+        if elem.tag == 'material':
+            print(elem)
+            title = elem.attrib['label']
+            filename = format(exportDir + "\\"+title + ".xml")
+            #print(filename)
+            with open(filename, 'wb') as f:
+                #do we even need this?
+                f.write(b"<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n")
+                f.write(ET.tostring(elem))
+
+    message("Preset Exported!")
+
+
+def OpenNumatb():
+    numatb = filedialog.askopenfilename(title = "Search",filetypes=root.filetypes)
+    if (numatb == ""):
+        return
+    root.numatb = numatb
+    #only set configuration on opening, or saving as, provided current != preset
+    if (root.numatb != root.presetNumatb):
+        config.set("DEFAULT","numatbLocation",root.numatb)
+        with open('config.ini', 'w+') as configfile:
+            config.write(configfile)
 
     #read in data
     root.matl = ssbh_data_py.matl_data.read_matl(root.numatb)
     #now refresh GUI and whatnot
     RefreshGUI()
+    UpdatePresetMenus()
 
 def SaveAsNumatb():
     file = filedialog.asksaveasfile(filetypes = root.filenumatb, defaultextension = root.filenumatb)
     if (file is None):
         return
-    root.numatb = file.path
-    print(root.numatb)
+
+    root.numatb = file.name
+    root.matlLabel.config(text=truncate(root.numatb,limit=40) )
+    config.set("DEFAULT","numatbLocation",root.numatb)
+    with open('config.ini', 'w+') as configfile:
+        config.write(configfile)
+
     SaveNumatb(False)
+
     
 def SaveNumatb(backUp=True):
     #create backup first
@@ -97,11 +178,12 @@ def SaveNumatb(backUp=True):
         backUp.save(backupLocation)
     # Save any changes made to the root.matl.
     root.matl.save(root.numatb)
-    root.title(root.title().replace("*",""))
+    root.title(appName)
     message("Saved!")
+    UpdatePresetMenus()
 
 def ChangedNumatb():
-    root.title(root.title()+"*")
+    root.title(appName+"*")
 
 
 #truncate strings for labels
@@ -128,7 +210,7 @@ def message(text,type=""):
         messagebox.showinfo(root.title(),text)
     print(type+": "+text)
 
-def RefreshGUI():
+def RefreshGUI(selection=-1):
     isNewFile = (root.numatb == "")
 
     #Change header text based on openfile
@@ -144,6 +226,9 @@ def RefreshGUI():
     for i in range(len(root.matl.entries)):
         entry = root.matl.entries[i]
         root.list_Material.insert(i, entry.material_label)
+
+    if (selection >-1):
+        root.list_Material.select_set(selection)
     RefreshGUI_Info()
 
 #convert parameters to more legible string
@@ -151,11 +236,22 @@ def ReadParamID(param_id):
     paramName = str(param_id)
     paramName = paramName[paramName.find(".")+1:paramName.find(":")]
     return paramName
+
+def CleanParamData(data):
+    toRemove = ["ssbh_data_py.matl_data.BlendStateData",
+    "ssbh_data_py.matl_data.RasterizerStateData","WrapMode.","<",">",
+    "ssbh_data_py.matl_data.SamplerData"
+    ]
+    string = str(data)
+    for r in toRemove:
+        string = string.replace(r,"")
+    return string
+
 def ReadAllParams(params):
     for p in params:
         for i in p:
             paramName = ReadParamID(i.param_id)
-            paramValue = str(i.data)
+            paramValue = CleanParamData(i.data)
             addParamText(paramName +": "+paramValue+"\n")
 
 #converts shader_label to shader_Name and render_Name
@@ -190,7 +286,9 @@ def RefreshGUI_Info():
     renderValue = root.renderOptions['values'].index(renderName)
     root.renderOptions.current(renderValue)
     #fill out parameter box
-    params = [entry.floats,entry.booleans,entry.vectors,entry.textures]
+    params = [entry.floats,entry.booleans,entry.vectors,entry.textures,
+    entry.samplers,entry.blend_states,entry.rasterizer_states
+    ]
     ReadAllParams(params)
 
 #GUI  
@@ -212,11 +310,13 @@ root.filemenu.add_command(label="Exit", command=quitOut)
 root.menubar.add_cascade(label="File", menu=root.filemenu)
 
 root.configmenu = Menu(root.menubar, tearoff=0)
-root.configmenu.add_command(label="Set Preset Numatb", command=donothing)
-root.menubar.add_cascade(label="Settings", menu=root.configmenu)
+root.configmenu.add_command(label="Set Preset Numatb", command=SetPreset)
+root.configmenu.add_command(label="Export Presets To LazyMat", command=ExportPreset)
+root.menubar.add_cascade(label="Presets", menu=root.configmenu)
 
 def OpenWiki():
     webbrowser.open('https://github.com/CSharpM7/SharpSmashSuite/wiki')
+
 root.helpmenu = Menu(root.menubar, tearoff=0)
 root.helpmenu.add_command(label="Wiki", command=OpenWiki)
 #root.helpmenu.add_command(label="About...", command=donothing)
@@ -256,6 +356,98 @@ root.list_Material = Listbox(fr_Material,
 fr_Material.add(root.list_Material)
 root.list_Material.bind('<<ListboxSelect>>', onMaterialSelected)
 
+def onClosedPopup():
+    root.popup.destroy()
+    root.deiconify()
+
+
+def AddPreset():
+    selection = getSelectedMaterial()
+    currentEntry = root.matl.entries[selection]
+
+    root.preset.entries.append(currentEntry)
+    root.preset.save(root.presetNumatb)
+    message("Added "+currentEntry.material_label+" to presets!")
+
+
+def UpdatePresetMenus():
+    #Disable preset commands if you're editing the preset file!
+    hasPreset = "normal" if os.path.isfile(root.presetNumatb) else "disabled"
+    if (hasPreset=="normal"):
+        if (root.numatb == root.presetNumatb):
+            hasPreset = "disabled"
+    menu_listMaterial.entryconfigure(0, state=hasPreset)
+    menu_listMaterial.entryconfigure(1, state=hasPreset)
+
+def ChangeToPreset():
+    root.deiconify()
+    #make sure a material AND a preset are selected
+    selection = getSelectedMaterial()
+    p = root.list_Presets.curselection()
+    root.popup.destroy()
+    if (selection <0):
+        return
+    if (len(p)==0):
+        return
+    presetSelection = p[0]
+
+    #record the original material and its name (used for the messagepopup and renaming)
+    original = root.matl.entries[selection]
+    oldName = original.material_label
+
+    #record our preset data
+    preset = root.preset.entries[presetSelection]
+    newName = preset.material_label
+
+    #make a copy
+    presetClone = SSBHCopy(preset)
+
+    #preserve textures...should I just make this a function?
+    for t in presetClone.textures:
+        for u in original.textures:
+            #print(str(u.param_id) + "/"+str)
+            if (str(u.param_id) == str(t.param_id)):
+                t.data = ""+u.data
+                break
+
+    #place the copy where the old material is, and then remove the old material
+    root.matl.entries.insert(selection,presetClone)
+    root.matl.entries[selection].material_label = oldName
+    root.matl.entries.pop(selection+1)
+
+    #RefreshGUI(selection)
+    RefreshGUI_Info()
+    message(oldName + " is now using "+newName+"'s shader")
+    ChangedNumatb()
+
+
+def ChangeToPresetPopUp():
+    root.popup = Toplevel()
+    selection = getSelectedMaterial()
+    if (selection <0):
+        return
+
+    entry = root.matl.entries[selection]
+    root.popup.title("Change "+entry.material_label+" To Preset")
+
+    root.list_Presets = Listbox(root.popup,
+                      height = 10, 
+                      width = 15, 
+                      #bg = "grey",
+                      activestyle = 'dotbox', 
+                      font = "Helvetica",
+                      fg = "black",
+                      exportselection=False
+                      )
+    root.list_Presets.pack()
+    for i in range(len(root.preset.entries)):
+        entry = root.preset.entries[i]
+        root.list_Presets.insert(i, entry.material_label)
+
+    button = Button(root.popup, text="Change", command=ChangeToPreset).pack()
+    root.popup.protocol("WM_DELETE_WINDOW", onClosedPopup)
+    root.withdraw();
+
 def RemoveMaterial():
     selection = getSelectedMaterial()
     root.matl.entries.pop(selection)
@@ -291,8 +483,8 @@ def DuplicateMaterial():
 
     newEntry.material_label = currentEntry.material_label + "-1"
     root.matl.entries.insert(selection+1,newEntry)
-    #newEntry.vectors[0].data = [2.0,1.0,0.0,1.0]
-    RefreshGUI()    
+    RefreshGUI(selection+1)    
+    RefreshGUI_Info()    
     ChangedNumatb()
 
 root.popup = None
@@ -309,6 +501,7 @@ def RenameMaterial():
 
     root.popup.destroy()
 
+    #listBox needs to be deleted and then readded as a new name
     root.list_Material.delete(selection)
     root.list_Material.insert(selection,newName)
     root.list_Material.select_set(selection)
@@ -329,9 +522,13 @@ def RenameMaterialPopUp():
     root.popup.entryLabel.pack()
     root.popup.entryLabel.insert(0, entry.material_label)
     button = Button(root.popup, text="Rename", command=RenameMaterial).pack()
+    root.popup.protocol("WM_DELETE_WINDOW", onClosedPopup)
     root.withdraw();
 
 menu_listMaterial = Menu(root, tearoff = 0)
+menu_listMaterial.add_command(label ="Add To Presets", command = AddPreset,state ='disabled')
+menu_listMaterial.add_command(label ="Change To Preset", command = ChangeToPresetPopUp,state ='disabled')
+menu_listMaterial.add_separator()
 menu_listMaterial.add_command(label ="Rename", command = RenameMaterialPopUp)
 menu_listMaterial.add_command(label ="Duplicate", command = DuplicateMaterial)
 menu_listMaterial.add_separator()
@@ -374,12 +571,12 @@ def GetShader(shaderName):
 def CreateParametersFromShader(material,shaderName="",shaderID=-1):
     connection = sqlite3.connect("Nufx.db")
     cursor = connection.cursor()
+    qfilter = shaderName
     query = """SELECT ParamID FROM MaterialParameter WHERE ShaderProgramID IN (
         SELECT ID
         FROM ShaderProgram
         WHERE Name = ?
         )"""
-    qfilter = shaderName
     if (shaderID!=""):
         query = """SELECT ParamID FROM MaterialParameter WHERE ShaderProgramID = ?"""
         qfilter = shaderID
@@ -388,65 +585,139 @@ def CreateParametersFromShader(material,shaderName="",shaderID=-1):
     params = []
     for r in records:
         paramType = ssbh_data_py.matl_data.ParamId.from_value(r[0])
-        #print(paramType.name)
         params.append(paramType)
     return params
 
+def GetBlendState():
+    connection = sqlite3.connect("smush_materials_v13.0.1.db")
+    cursor = connection.cursor()
+    query = """SELECT * FROM BlendState WHERE MaterialId = ?"""
+    qfilter = root.matID
+    cursor.execute(query, (qfilter,))
+    record = cursor.fetchone() #yolo
+    
+    data = ssbh_data_py.matl_data.BlendStateData()
+    data.source_color = ssbh_data_py.matl_data.BlendFactor.from_value(record[3])
+    #4 is unk2
+    data.destination_color = ssbh_data_py.matl_data.BlendFactor.from_value(record[5])
+    #6,7,8 are unk4,5,6
+    data.alpha_sample_to_coverage = (record[9]==1)
+
+    return data
+def GetRasterizer():
+    connection = sqlite3.connect("smush_materials_v13.0.1.db")
+    cursor = connection.cursor()
+    query = """SELECT * FROM RasterizerState WHERE MaterialId = ?"""
+    qfilter = root.matID
+    cursor.execute(query, (qfilter,))
+    record = cursor.fetchone() #yolo
+    
+    data = ssbh_data_py.matl_data.RasterizerStateData()
+    data.fill_mode = ssbh_data_py.matl_data.FillMode.from_value(record[3])
+    data.cull_mode = ssbh_data_py.matl_data.CullMode.from_value(record[4])
+    data.depth_bias = record[5]
+
+    return data
+
+def GetSampler():
+    #look up the Sampler Table to see if a row has the same materialId and paramId as our arguments
+    #or just yolo 
+    connection = sqlite3.connect("smush_materials_v13.0.1.db")
+    cursor = connection.cursor()
+    query = """SELECT * FROM Sampler WHERE MaterialId = ?"""
+    qfilter = root.matID
+    cursor.execute(query, (qfilter,))
+    record = cursor.fetchone() #yolo
+
+    data = ssbh_data_py.matl_data.SamplerData()
+    data.wraps = ssbh_data_py.matl_data.WrapMode.from_value(record[3])
+    data.wrapt = ssbh_data_py.matl_data.WrapMode.from_value(record[4])
+    data.wrapr = ssbh_data_py.matl_data.WrapMode.from_value(record[5])
+    data.min_filter = ssbh_data_py.matl_data.MinFilter.from_value(record[6])
+    data.mag_filter = ssbh_data_py.matl_data.MagFilter.from_value(record[7])
+    #filterTypes = ["Default","Default2","Anisotropic Filtering"]
+    #record[8] is texturefilteringtype, we need this
+    data.border_color = (record[9],record[10],record[11],record[12])
+    #13/14 is Unk
+    data.lod_bias = record[15]
+    data.max_anisotropy = None if (record[16]==0) else ssbh_data_py.matl_data.MaxAnisotropy.from_value(record[16])
+
+    return data
 
 
+root.matID = 0
+def GetMaterialID(shaderLabel):
+    #provided a shaderLabel, search through Materials and find the MatlId.
+    connection = sqlite3.connect("smush_materials_v13.0.1.db")
+    cursor = connection.cursor()
+    query = """SELECT MatlId FROM Material WHERE ShaderLabel = ?"""
+    qfilter = shaderLabel
+    cursor.execute(query, (qfilter,))
+    record = cursor.fetchone() #yolo
+    return record[0]
 
 #Create Parameters
-def CreateBlendState(param,matl):
+def CreateBlendState(param,oldmatl,newmatl):
     #needs to be queried from smush_materials to create default
-    #newObject = ssbh_data_py.matl_data.BlendStateParamm(param,data)
-    #matl.blend_states.append(newObject)
+    data = GetBlendState()
+    newObject = ssbh_data_py.matl_data.BlendStateParam(param,data)
+    newmatl.blend_states.append(newObject)
 
-def CreateRasterizerState(param,matl):
+def CreateRasterizerState(param,oldmatl,newmatl):
     #needs to be queried from smush_materials to create default
-    #newObject = ssbh_data_py.matl_data.RasterizerStateParam(param,data)
-    #matl.rasterizer_states.append(newObject)
+    data = GetRasterizer()
+    newObject = ssbh_data_py.matl_data.RasterizerStateParam(param,data)
+    newmatl.rasterizer_states.append(newObject)
 
-def CreateSampler(param,matl):
+def CreateSampler(param,oldmatl,newmatl):
     #needs to be queried from smush_materials to create default
-    data = ssbh_data_py.matl_data.SamplerData()
+    data = GetSampler()
     newObject = ssbh_data_py.matl_data.SamplerParam(param,data)
-    matl.samplers.append(newObject)
+    newmatl.samplers.append(newObject)
 
-def CreateFloat(param,matl):
+def CreateFloat(param,oldmatl,newmatl):
     data = 1.0
     newObject = ssbh_data_py.matl_data.FloatParam(param,data)
-    matl.floats.append(newObject)
+    newmatl.floats.append(newObject)
 
-def CreateBool(param,matl):
-    data = 1.0
+def CreateBool(param,oldmatl,newmatl):
+    data = False
     newObject = ssbh_data_py.matl_data.BooleanParam(param,data)
-    matl.booleans.append(newObject)
+    newmatl.booleans.append(newObject)
 
-def CreateVector(param,matl):
+def CreateVector(param,oldmatl,newmatl):
     #default value idk
     data = [1.0,1.0,1.0,0.0]
     newObject = ssbh_data_py.matl_data.Vector4Param(param,data)
-    matl.vectors.append(newObject)
+    newmatl.vectors.append(newObject)
 
-def CreateTexture(param,matl):
-    data = r"/common/shader/sfxPBS/default_Gray"
+def CreateTexture(param,oldmatl,newmatl):
+    data = r"/common/shader/sfxPBS/default_White"
+    #See if we can preserve the texture
+    for i in oldmatl.textures:
+        if (str(i.param_id) == str(param)):
+            data = ""+i.data
+            break
+
     newObject = ssbh_data_py.matl_data.TextureParam(param,data)
-    matl.textures.append(newObject)
+    newmatl.textures.append(newObject)
 
-def ParameterError(param,matl):
+def ParameterError(param,oldmatl,newmatl):
     message(type="error",text="wtf is that parameter?")
     root.withdraw()
     sys.exit("unknown parameter")
 
-def ChangeShader():
+def ChangeShaderConfirm():
     root.deiconify()
-    selection = getSelectedMaterial()
-    if (selection <0):
-        return
-
     #Check to see if shader label is valid, if not, return to normal
     newName = root.popup.entryLabel.get()
     root.popup.destroy()
+    ChangeShader(newName)
+
+def ChangeShader(newName):
+    selection = getSelectedMaterial()
+    if (selection <0):
+        return
 
     newShaderID,newShaderName = GetShader(newName)
     if (newShaderName == None):
@@ -458,11 +729,19 @@ def ChangeShader():
     shaderName,renderName = GetShaderNames(entry.shader_label)
     entry.shader_label = newName+"_"+renderName
     root.shaderButton.config(text = newName)
-    #NOW THE FUN PART: Reassign ALLLLLLLLLLLL parameters :D
 
     newEntry = ssbh_data_py.matl_data.MatlEntryData(entry.material_label,entry.shader_label)
-
-    parameters = CreateParametersFromShader(entry,shaderID=newShaderID)
+    #editing Current is possible new way
+    editingCurrent=False
+    if (editingCurrent==True):
+        #clense entry of customs and textures
+        entry.vectors.clear()
+        entry.floats.clear()
+        entry.booleans.clear()
+        entry.textures.clear()
+        while len(entry.samplers)>1:
+            entry.samplers.pop(0)
+    newParameters = CreateParametersFromShader(newEntry,shaderID=newShaderID)
 
     paramTypes = {
         "BlendState" : CreateBlendState,
@@ -473,26 +752,33 @@ def ChangeShader():
         "Sampler" : CreateSampler,
         "Texture" : CreateTexture
     }
-    for p in parameters:
+    root.matID = GetMaterialID(newEntry.shader_label)
+    print("matID:"+str(root.matID))
+
+    for p in newParameters:
         #removed Digits
         paramName = p.name
+        print(p.name)
         paramTypeString = ''.join([i for i in paramName if not i.isdigit()])
-        paramTypes.get(paramTypeString, ParameterError)(p,newEntry)
+        paramTypes.get(paramTypeString, ParameterError)(p,entry,newEntry)
 
 
-    root.matl.entries.pop(selection)
-    root.matl.entries.insert(selection,newEntry)
-    RefreshGUI()
-    root.list_Material.select_set(selection)
+    if (editingCurrent == False):
+        root.matl.entries.pop(selection)
+        root.matl.entries.insert(selection,newEntry)
+    else:
+        entry.samplers.pop(0)
+
+    #RefreshGUI(selection)
     RefreshGUI_Info()
-
+    message("Shader Updated")
 
 def ChangeShaderPopUp():
     selection = getSelectedMaterial()
     if (selection <0):
         return
 
-    res = messagebox.askyesno(root.title(), 'Changing the shader will clear your current values! Proceed?',icon ='warning')
+    res = messagebox.askyesno(root.title(), 'Shader changing is experimental! Make sure you double check in CrossMod that everything looks alright. Proceed?',icon ='warning')
     if res == False:
         return
 
@@ -509,7 +795,8 @@ def ChangeShaderPopUp():
     root.popup.entryLabel = Entry(root.popup, width =50)
     root.popup.entryLabel.pack()
     root.popup.entryLabel.insert(0, shaderName)
-    button = Button(root.popup, text="Change", command=ChangeShader).pack()
+    button = Button(root.popup, text="Change", command=ChangeShaderConfirm).pack()
+    root.popup.protocol("WM_DELETE_WINDOW", onClosedPopup)
     root.withdraw();
 
 root.shaderButton = Button(fr_Shader, command=ChangeShaderPopUp)
@@ -552,13 +839,12 @@ def clearParamText():
 root.paramList = ScrolledText(fr_Info, bd = 1)
 fr_Info.add(root.paramList)
 
+if (os.path.isfile(root.presetNumatb)):
+    root.preset = ssbh_data_py.matl_data.read_matl(root.presetNumatb)
+    UpdatePresetMenus()
 if (os.path.isfile(root.numatb)):
     root.matl = ssbh_data_py.matl_data.read_matl(root.numatb)
     RefreshGUI()
-
-
-#root.list_Material.select_set(2)
-#ChangeShaderPopUp()
 
 root.mainloop()
 #root.withdraw()
