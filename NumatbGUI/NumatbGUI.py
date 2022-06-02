@@ -36,6 +36,7 @@ defaultConfig['DEFAULT'] = {
     'numatbLocation': defaultLocation,
     'presetLocation' : "",
     'matlabLocation' : "",
+    'crossmodLocation' : "",
     }
 
 def CreateConfig():
@@ -50,6 +51,9 @@ if (not os.path.isfile(os.getcwd() + r"\config.ini")):
 config.read('config.ini')
 root.numatb = config["DEFAULT"]["numatbLocation"]
 root.presetNumatb = config["DEFAULT"]["presetLocation"]
+
+root.dbShader = "nufx.db"
+root.dbMaterial = "smush_materials_v13.0.1.db"
 
 
 # numatb file IO
@@ -76,6 +80,11 @@ root.fileexe = (
     ('MatLab exe', '*.exe'),
 )
 
+def HasDatabase():
+    hasShader = os.path.isfile(os.getcwd() + "\\"+root.dbShader)
+    hasMaterial = os.path.isfile(os.getcwd() + "\\"+root.dbMaterial)
+    return hasShader and hasMaterial
+
 def SetPreset():
     numatb = filedialog.askopenfilename(title = "Search",filetypes=root.filetypes)
     if (numatb == ""):
@@ -92,52 +101,204 @@ def SetPreset():
     UpdatePresetMenus()
     message("Preset Updated")
 
+root.exportLocation = ""
+root.exportDir = ""
 
-def ExportPreset():
-    matLab = config["DEFAULT"]["matlabLocation"]
-    if (not os.path.isfile(matLab)):
-        message("Please select your MatLab.exe file")
-        matLab = filedialog.askopenfilename(filetypes=root.fileexe)
-        if (not os.path.isfile(matLab)):
-            message(type="error",text="Invalid matlab file")
-            return
+
+def GetLocation(foldername,nickname):
+    location = config["DEFAULT"][foldername]
+    if (not os.path.isdir(location)):
+        message("Please select your "+nickname+" folder")
+        location = filedialog.askdirectory(title = "Select "+nickname+" folder")
+        if (not os.path.isdir(location)):
+            message(type="error",text="Invalid folder")
+            return ""
         else:
-            config.set("DEFAULT","matlabLocation",matLab)
+            config.set("DEFAULT",foldername,location)
             with open('config.ini', 'w+') as configfile:
                 config.write(configfile)
+    return location
+def GetMatLab():
+    #Make sure matlab folder exists
+    matLab = GetLocation("matlabLocation","MatLab")
+    if (matLab == ""):
+        return ""
+
+    #Make sure matlab exe exists
+    matLab = matLab+"\\MatLab.exe"
+    if (os.path.isfile(matLab) == False):
+        message(type="error",text="MatLab.exe is missing from MatLab folder!")
+        config.set("DEFAULT","matlabLocation","")
+        with open('config.ini', 'w+') as configfile:
+            config.write(configfile)
+        return ""
+
+    return matLab
+def GetCrossMod():
+    return GetLocation("crossmodLocation","CrossMod")
+def CreateXML():
+    matLab = GetMatLab()
+    if (matLab == ""):
+        return
 
     if (root.preset == ""):
-        return
-    exportDir = filedialog.askdirectory(title = "Select a folder to export to")
-    if (exportDir == ""):
-        message(type="error",text="Invalid folder")
-        return
+        return False
 
     #create output file
     outputFile = open('output.txt','w+')
     outputFile.close()
-    #runmatlab
-    exportLocation = root.presetNumatb.replace("numatb","xml")
-    subcall = [matLab,root.presetNumatb,exportLocation]
+
+    #run matlab
+    SetStatus("Running MatLab...")
+    root.exportLocation = root.presetNumatb.replace("numatb","xml")
+    subcall = [matLab,root.presetNumatb,root.exportLocation]
     with open('output.txt', 'a+') as stdout_file:
         process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
         print(process_output.__dict__)
+    return True
 
-    file = open(exportLocation, encoding='utf-8', errors='replace')
-    context = ET.iterparse(file, events=('end',))
-    for event, elem in context:
-        if elem.tag == 'material':
-            print(elem)
-            title = elem.attrib['label']
-            filename = format(exportDir + "\\"+title + ".xml")
-            #print(filename)
-            with open(filename, 'wb') as f:
-                #do we even need this?
-                f.write(b"<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n")
-                f.write(ET.tostring(elem))
+def ExportPreset():
+    xmlCreated = CreateXML()
+    if (xmlCreated == False):
+        return
 
+    exportDir = filedialog.askdirectory(title = "Select ""Shader"" folder inside LazyMat")
+    if (os.path.isdir(exportDir)):
+        message(type="error",text="Invalid folder")
+        return False
+
+    outputFile = open(root.exportLocation,'w+')
+    outputFile.close()
+    with open(root.exportLocation, encoding='utf-8', errors='replace') as file:
+        context = ET.iterparse(file, events=('end',))
+        for event, elem in context:
+            if elem.tag == 'material':
+                title = elem.attrib['label']
+                filename = format(exportDir + "\\"+title + ".xml")
+                SetStatus("Creating "+title)
+                with open(filename, 'wb') as f:
+                    f.write(b"<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n")
+                    f.write(ET.tostring(elem))
     message("Preset Exported!")
 
+
+root.xmlreplacements = {
+    "material name": r"Material shaderLabel",
+    "/material>": r"/Material>",
+    "label": r"materialLabel",
+    "param": r"Parameter",
+    "blend_state>" : r"BlendState>",
+    "rasterizer_state>" : r"RasterizerState>",
+    #bruh we really gonna capitalize it like this?
+    "vector4>" : "Vector4>",
+    "bool>" : "Bool>",
+    "float>" : "Float>",
+    "sampler>" : "Sampler>",
+    "string>" : "String>"
+    #unk7 of blendState to EnableAlphaSampleToCoverage
+    }
+
+#CREATE CORRUPT NUMATBS :(
+def ImportCross():
+    crossMod = GetLocation("crossmodLocation","CrossMod")
+    if (crossMod == ""):
+        return
+    matLab = GetMatLab()
+    if (matLab == ""):
+        return
+
+    sourceLocation = crossMod+r"\MaterialPresets\MaterialPresets.xml"
+    if (os.path.isfile(sourceLocation) == False):
+        message(type="error",text="MaterialPresets.xml missing from the MaterialPresets folder in CrossMod!")
+        return
+    targetLocation = os.getcwd()+"\\crossmod.xml"
+    crossData = ""
+
+    tree = None
+    with open(sourceLocation, 'rb') as file:
+        parser = ET.XMLParser(encoding ='utf-8')
+        tree = ET.parse(file,parser)
+        treeRoot = tree.getroot()
+        treeRoot.set("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance")
+        treeRoot.set("xmlns:xsd","http://www.w3.org/2001/XMLSchema")
+        for item in treeRoot.findall('./Material/Parameter/BlendState'):
+            #add 11 and 12
+            for child in item:
+                if (child.tag == "EnableAlphaSampleToCoverage"):
+                    child.tag = "Unk7"
+    
+    tree.write(targetLocation, encoding="utf-16", xml_declaration=True) 
+
+    targetFile = open(targetLocation,'r', encoding='utf-16')
+    crossData = targetFile.read()
+    targetFile.close()
+    with open(targetLocation, 'w') as f:
+        #Start Replacing
+        for k, v in root.xmlreplacements.items():
+            crossData = crossData.replace(v,k)
+        crossData.replace("EnableAlphaSampleToCoverage","Unk7")
+        f.write(crossData)
+
+    #run matlab
+    SetStatus("Running MatLab...")
+    exportLocation = targetLocation.replace("xml","numatb")
+    subcall = [matLab,targetLocation,exportLocation]
+
+    #create output file
+    outputFile = open('output.txt','w')
+    outputFile.close()
+
+    with open('output.txt', 'r+') as stdout_file:
+        process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+    with open('output.txt', 'r') as stdout_file:
+        print(stdout_file.read())
+    #message("CrossMod presets saved as crossmod.numatb")
+    message("CrossMod presets saved as "+exportLocation)
+
+def ExportCross():
+    xmlCreated = CreateXML()
+    if (xmlCreated == False):
+        return
+
+    crossMod = GetCrossMod()
+    if (crossMod == ""):
+        return
+
+    targetFile = crossMod+r"\MaterialPresets\MaterialPresets.xml"
+    #TODO: Convert file into crossmod legable one
+    #might need to create a copy? like open the file and then save it elsewhere?
+    crossData = ""
+
+    exportFile = open(root.exportLocation,'r+')
+    crossData = exportFile.read()
+    with open(targetFile, 'w+') as f:
+        #Start Replacing
+        for k, v in root.xmlreplacements.items():
+            crossData = crossData.replace(k,v)
+        f.write(crossData)
+
+    exportFile.close()
+
+    crossData = ""
+    tree = None
+    with open(targetFile, 'rb') as file:
+        #file = open(targetFile, encoding='utf-8', errors='replace')
+        parser = ET.XMLParser(encoding ='utf-8')
+        tree = ET.parse(file,parser)
+        # get root element
+        treeRoot = tree.getroot()
+        treeRoot.set("xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance")
+        treeRoot.set("xmlns:xsd","http://www.w3.org/2001/XMLSchema")
+        for item in treeRoot.findall('./Material/Parameter/BlendState'):
+            #item.remove(item[11])
+            #item.remove(item[10])
+            for child in item:
+                if (child.tag == "Unk7"):
+                    child.tag = "EnableAlphaSampleToCoverage"
+        
+    tree.write(targetFile, encoding="utf-16", xml_declaration=True) 
+
+    message("Preset Exported!")
 
 def OpenNumatb():
     numatb = filedialog.askopenfilename(title = "Search",filetypes=root.filetypes)
@@ -151,7 +312,15 @@ def OpenNumatb():
             config.write(configfile)
 
     #read in data
-    root.matl = ssbh_data_py.matl_data.read_matl(root.numatb)
+
+    try:
+        root.matl = ssbh_data_py.matl_data.read_matl(root.numatb)
+        RefreshGUI()
+    except Exception as e:
+        message(type="error",text="Corruped numatb?")
+        print (e)
+        NewNumatb()
+        return
     #now refresh GUI and whatnot
     RefreshGUI()
     UpdatePresetMenus()
@@ -200,6 +369,7 @@ def truncate(string,direciton=W,limit=20,ellipsis=True):
 
 #show message
 def message(text,type=""):
+    RevertStatus()
     type = type.lower()
     #what do you mean match type is only for 3.10?!?
     if type=="error":
@@ -312,6 +482,8 @@ root.menubar.add_cascade(label="File", menu=root.filemenu)
 root.configmenu = Menu(root.menubar, tearoff=0)
 root.configmenu.add_command(label="Set Preset Numatb", command=SetPreset)
 root.configmenu.add_command(label="Export Presets To LazyMat", command=ExportPreset)
+root.configmenu.add_command(label="Export Presets To CrossMod", command=ExportCross)
+#root.configmenu.add_command(label="Import Presets From CrossMod", command=ImportCross)
 root.menubar.add_cascade(label="Presets", menu=root.configmenu)
 
 def OpenWiki():
@@ -324,8 +496,15 @@ root.menubar.add_cascade(label="Help", menu=root.helpmenu)
 
 root.config(menu=root.menubar)
 
-pythonInfo = "Python: " + sys.version
-status = Label(root, text=truncate(pythonInfo,E,14,False), bd=1, relief=SUNKEN, anchor=E)
+root.pythonInfo = "Python: " + sys.version
+
+def SetStatus(string):
+    status.config(text = string)
+    print(string)
+def RevertStatus():
+    status.config(text = truncate(root.pythonInfo,E,14,False))
+
+status = Label(root, text=truncate(root.pythonInfo,E,14,False), bd=1, relief=SUNKEN, anchor=E)
 status.pack(side = BOTTOM, fill=X)
 
 
@@ -557,7 +736,7 @@ shaderLabel.pack(side = LEFT, padx=10)
 
 def GetShader(shaderName):
     shaderName = shaderName
-    connection = sqlite3.connect("Nufx.db")
+    connection = sqlite3.connect(root.dbShader)
     cursor = connection.cursor()
     cursor.execute("""SELECT * FROM ShaderProgram WHERE Name = ?""", (shaderName,))
     records = cursor.fetchall()
@@ -569,7 +748,7 @@ def GetShader(shaderName):
         return shader[0], shader[1];
 
 def CreateParametersFromShader(material,shaderName="",shaderID=-1):
-    connection = sqlite3.connect("Nufx.db")
+    connection = sqlite3.connect(root.dbShader)
     cursor = connection.cursor()
     qfilter = shaderName
     query = """SELECT ParamID FROM MaterialParameter WHERE ShaderProgramID IN (
@@ -589,7 +768,7 @@ def CreateParametersFromShader(material,shaderName="",shaderID=-1):
     return params
 
 def GetBlendState():
-    connection = sqlite3.connect("smush_materials_v13.0.1.db")
+    connection = sqlite3.connect(root.dbMaterial)
     cursor = connection.cursor()
     query = """SELECT * FROM BlendState WHERE MaterialId = ?"""
     qfilter = root.matID
@@ -778,6 +957,12 @@ def ChangeShaderPopUp():
     if (selection <0):
         return
 
+    if (HasDatabase()==False):
+        res = messagebox.askyesno(root.title(), 'You need '+root.dbShader+' and '+root.dbMaterial+ ' in this directory to use this function! Open web browser to download these files?',icon ='error')
+        if res == True:
+            webbrowser.open('https://github.com/ScanMountGoat/Smush-Material-Research/tree/master/Value%20Dumps')
+        return
+
     res = messagebox.askyesno(root.title(), 'Shader changing is experimental! Make sure you double check in CrossMod that everything looks alright. Proceed?',icon ='warning')
     if res == False:
         return
@@ -840,11 +1025,17 @@ root.paramList = ScrolledText(fr_Info, bd = 1)
 fr_Info.add(root.paramList)
 
 if (os.path.isfile(root.presetNumatb)):
-    root.preset = ssbh_data_py.matl_data.read_matl(root.presetNumatb)
+    try:
+        root.preset = ssbh_data_py.matl_data.read_matl(root.presetNumatb)
+    except:
+        print("file corrupted!")
     UpdatePresetMenus()
 if (os.path.isfile(root.numatb)):
-    root.matl = ssbh_data_py.matl_data.read_matl(root.numatb)
-    RefreshGUI()
+    try:
+        root.matl = ssbh_data_py.matl_data.read_matl(root.numatb)
+        RefreshGUI()
+    except:
+        print("file corrupted!")
 
 root.mainloop()
 #root.withdraw()
