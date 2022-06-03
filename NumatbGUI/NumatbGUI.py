@@ -19,6 +19,7 @@ import webbrowser
 import configparser
 config = configparser.ConfigParser()
 import xml.etree.ElementTree as ET
+import re
 
 #create GUI window
 root = Tk()
@@ -304,6 +305,14 @@ def OpenNumatb():
     numatb = filedialog.askopenfilename(title = "Search",filetypes=root.filetypes)
     if (numatb == ""):
         return
+    try:
+        root.matl = ssbh_data_py.matl_data.read_matl(numatb)
+        RefreshGUI()
+    except Exception as e:
+        message(type="error",text="Invalid numatb (some numatbs that use CrossMod's original presets cause this error)")
+        print (e)
+        return
+
     root.numatb = numatb
     #only set configuration on opening, or saving as, provided current != preset
     if (root.numatb != root.presetNumatb):
@@ -313,14 +322,6 @@ def OpenNumatb():
 
     #read in data
 
-    try:
-        root.matl = ssbh_data_py.matl_data.read_matl(root.numatb)
-        RefreshGUI()
-    except Exception as e:
-        message(type="error",text="Corruped numatb?")
-        print (e)
-        NewNumatb()
-        return
     #now refresh GUI and whatnot
     RefreshGUI()
     UpdatePresetMenus()
@@ -620,8 +621,8 @@ def ChangeToPresetPopUp():
                       )
     root.list_Presets.pack()
     for i in range(len(root.preset.entries)):
-        entry = root.preset.entries[i]
-        root.list_Presets.insert(i, entry.material_label)
+        preset = root.preset.entries[i]
+        root.list_Presets.insert(i, preset.material_label)
 
     button = Button(root.popup, text="Change", command=ChangeToPreset).pack()
     root.popup.protocol("WM_DELETE_WINDOW", onClosedPopup)
@@ -676,6 +677,7 @@ def RenameMaterial():
 
     entry = root.matl.entries[selection]
     newName = root.popup.entryLabel.get()
+    SetStatus("Renamed"+entry.material_label+" to "+newName)
     entry.material_label = newName
 
     root.popup.destroy()
@@ -729,9 +731,6 @@ fr_Info.add(fr_Info_label)
 
 fr_Shader = Frame(fr_Info)
 fr_Info.add(fr_Shader)
-
-shaderLabel = Label(fr_Shader, text="Shader:")
-shaderLabel.pack(side = LEFT, padx=10)
 
 
 def GetShader(shaderName):
@@ -872,6 +871,20 @@ def CreateVector(param,oldmatl,newmatl):
 
 def CreateTexture(param,oldmatl,newmatl):
     data = r"/common/shader/sfxPBS/default_White"
+    textureID = [int(s) for s in re.findall(r"\d+",param.name)]
+    textureID = textureID[0]
+    print(textureID)
+    #wish python3.9 had switch case
+    if textureID == 4:
+        data = "/common/shader/sfxPBS/default_Normal"
+    if textureID == 5 or textureID ==  14: #EMI should be black, maybe gray?
+        data = "/common/shader/sfxPBS/default_Black"
+    if textureID == 6:
+        data = "/common/shader/sfxPBS/default_Params"
+    if textureID == 2 or textureID ==  7 or textureID ==  8:
+        data = "#replace_cubemap"
+    if textureID == 9: #Baked lighting should be relatively dark
+        data = "/common/shader/sfxPBS/default_Gray"
     #See if we can preserve the texture
     for i in oldmatl.textures:
         if (str(i.param_id) == str(param)):
@@ -890,8 +903,19 @@ def ChangeShaderConfirm():
     root.deiconify()
     #Check to see if shader label is valid, if not, return to normal
     newName = root.popup.entryLabel.get()
+    if (newName.find("SFX_PBS_")<0):
+        newName = "SFX_PBS_" + newName
+    for r in root.renderOptions["values"]:
+        renderLabel = newName.find(r)
+        if (renderLabel>-1):
+            newName = newName[:renderLabel-1]
+        
     root.popup.destroy()
     ChangeShader(newName)
+
+def SortShader(shader):
+    key = [int(s) for s in re.findall(r"\d+",shader.param_id.name)] 
+    return key[0]
 
 def ChangeShader(newName):
     selection = getSelectedMaterial()
@@ -937,20 +961,27 @@ def ChangeShader(newName):
     for p in newParameters:
         #removed Digits
         paramName = p.name
-        print(p.name)
         paramTypeString = ''.join([i for i in paramName if not i.isdigit()])
         paramTypes.get(paramTypeString, ParameterError)(p,entry,newEntry)
 
+    newEntry.vectors.sort(key=SortShader)
+    newEntry.floats.sort(key=SortShader)
+    newEntry.booleans.sort(key=SortShader)
+    newEntry.textures.sort(key=SortShader)
+    newEntry.samplers.sort(key=SortShader)
 
     if (editingCurrent == False):
         root.matl.entries.pop(selection)
         root.matl.entries.insert(selection,newEntry)
+        del entry #I sure hope this doesn't break anything...
     else:
         entry.samplers.pop(0)
 
+
     #RefreshGUI(selection)
     RefreshGUI_Info()
-    message("Shader Updated")
+    ChangedNumatb()
+    SetStatus("Updated shader for "+newEntry.material_label)
 
 def ChangeShaderPopUp():
     selection = getSelectedMaterial()
@@ -985,12 +1016,10 @@ def ChangeShaderPopUp():
     root.withdraw();
 
 root.shaderButton = Button(fr_Shader, command=ChangeShaderPopUp)
-root.shaderButton.pack(side = RIGHT, fill = X, expand=1)
+root.shaderButton.pack(side = LEFT, fill = X, expand=1)
+separator = Label(fr_Shader,text="",width=3)
+separator.pack(side = LEFT)
 
-fr_Render = Frame(fr_Info)
-fr_Info.add(fr_Render)
-renderLabel = Label(fr_Render, text="Render Pass:")
-renderLabel.pack(side = LEFT, fill = X)
 n = StringVar()
 
 def onRenderChanged(event):
@@ -1003,14 +1032,88 @@ def onRenderChanged(event):
     entry.shader_label = shaderName + "_" + root.renderOptions.get()
     print(entry.shader_label)    
     ChangedNumatb()
-
-
-root.renderOptions = ttk.Combobox(fr_Render, width = 10, textvariable = n)
+root.renderOptions = ttk.Combobox(fr_Shader, width = 8, textvariable = n)
 # Adding combobox drop down list
 root.renderOptions['values'] = []
 root.renderOptions.current()
 root.renderOptions.pack(side = RIGHT)
 root.renderOptions.bind("<<ComboboxSelected>>", onRenderChanged)
+
+
+fr_ParameterButtons = Frame(fr_Info)
+fr_Info.add(fr_ParameterButtons)
+
+def ChangeTexture():
+    root.deiconify()
+
+    #get new texture values
+    newTextures = []
+    for i in root.popupTextures:
+        newTextures.append(i.get())
+    root.popup.destroy()
+
+    #make sure a material is selected
+    selection = getSelectedMaterial()
+    if (selection <0):
+        return
+
+    entry = root.matl.entries[selection]
+    for i in range(len(entry.textures)): 
+        entry.textures[i].data = newTextures[i]
+
+    RefreshGUI_Info()
+    ChangedNumatb()
+
+
+def ChangeTexturePopUp():
+    root.popup = Toplevel()
+    #root.popup.geometry("250x250")
+    selection = getSelectedMaterial()
+    if (selection <0):
+        return
+
+    entry = root.matl.entries[selection]
+    root.popup.title("Change Textures")
+
+    label = Label(root.popup,text=entry.material_label)
+    label.pack(fill = X,expand=1)
+
+    root.fr_Textures = Frame(root.popup)
+    root.fr_Textures.pack(fill = BOTH,expand=1,anchor=N)
+    root.popupTextures = []
+    for i in range(len(entry.textures)):
+        texture = entry.textures[i]
+        textureID = texture.param_id.name
+        textureData = texture.data
+        textureFrame = Frame(root.fr_Textures)
+        textureFrame.pack(fill = X,expand=1)
+        textureName = Entry(textureFrame,width=10)
+        textureName.insert(0,textureID)
+        textureName.configure(state ='disabled')
+        textureName.pack(side = LEFT, fill = BOTH,anchor=E)
+        textureValue = Entry(textureFrame,width=50)
+        textureValue.insert(0,textureData)
+        textureValue.pack(side = RIGHT, fill = BOTH,expand=1)
+        root.popupTextures.append(textureValue)
+
+    #root.list_TextureNames = Text(root.fr_Textures,width=10)
+    #root.list_TextureNames.pack(side = LEFT, fill = BOTH,anchor=E)
+    #root.list_Textures = Text(root.fr_Textures)
+    #root.list_Textures.pack(side = RIGHT, fill = BOTH,expand=1)
+    #for i in range(len(entry.textures)):
+    #    texture = entry.textures[i]
+    #    root.list_TextureNames.insert(END, texture.param_id.name+'\n')
+    #    root.list_Textures.insert(END, texture.data+'\n')
+    #    print(texture.data+'\n')
+    #root.list_TextureNames.configure(state ='disabled')
+
+    button = Button(root.popup, text="Change", command=ChangeTexture,width = 10).pack(side=BOTTOM)
+    root.popup.protocol("WM_DELETE_WINDOW", onClosedPopup)
+    root.withdraw();
+
+root.textureButton = Button(fr_ParameterButtons, command=ChangeTexturePopUp, text="Change Textures")
+root.textureButton.pack(side = LEFT, fill = X)
+
 
 def addParamText(text):
     root.paramList.configure(state ='normal')
