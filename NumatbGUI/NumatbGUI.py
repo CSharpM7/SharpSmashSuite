@@ -26,8 +26,8 @@ root = Tk()
 appName = "numatbGUI"
 root.title(appName)
 root.iconbitmap("icon.ico")
-root.width=600
-root.height=250
+root.width=800
+root.height=350
 root.geometry(str(root.width)+"x"+str(root.height))
 
 #default configuration
@@ -56,6 +56,8 @@ root.presetNumatb = config["DEFAULT"]["presetLocation"]
 root.dbShader = "nufx.db"
 root.dbMaterial = "smush_materials_v13.0.1.db"
 
+root.matID = 0
+root.shaderWarning=False
 
 # numatb file IO
 def NewNumatb():
@@ -178,7 +180,7 @@ def ExportPreset():
                 filename = format(exportDir + "\\"+title + ".xml")
                 SetStatus("Creating "+title)
                 with open(filename, 'wb') as f:
-                    f.write(b"<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n")
+                    #f.write(b"<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n")
                     f.write(ET.tostring(elem))
     message("Preset Exported!")
 
@@ -309,7 +311,7 @@ def OpenNumatb():
         root.matl = ssbh_data_py.matl_data.read_matl(numatb)
         RefreshGUI()
     except Exception as e:
-        message(type="error",text="Invalid numatb (some numatbs that use CrossMod's original presets cause this error)")
+        message(type="error",text="Invalid numatb (some numatbs edited with MatLab and Notepad++ cause this error)")
         print (e)
         return
 
@@ -343,13 +345,16 @@ def SaveAsNumatb():
 def SaveNumatb(backUp=True):
     #create backup first
     if (backUp==True):
-        backUp = ssbh_data_py.matl_data.read_matl(root.numatb)
-        backupLocation = root.numatb.replace(".numatb",".numatb.bk")
-        backUp.save(backupLocation)
+        if (os.path.isfile(root.numatb)):
+            backupLocation = root.numatb.replace(".numatb",".numatb.bk")
+            if (os.path.exists(backupLocation)):
+                os.remove(backupLocation)
+            os.rename(root.numatb,backupLocation)
+
     # Save any changes made to the root.matl.
     root.matl.save(root.numatb)
     root.title(appName)
-    message("Saved!")
+    SetStatus("Saved to "+os.path.basename(root.numatb))
     UpdatePresetMenus()
 
 def ChangedNumatb():
@@ -361,7 +366,7 @@ def truncate(string,direciton=W,limit=20,ellipsis=True):
     if (len(string) < 3):
         return string
     text = ""
-    addEllipsis = "..." if (ellipsis) else ""
+    addEllipsis = "..." if (ellipsis and (len(string)>limit)) else ""
     if direciton == W:
         text = addEllipsis+string[len(string)-limit:len(string)]
     else:
@@ -381,11 +386,18 @@ def message(text,type=""):
         messagebox.showinfo(root.title(),text)
     print(type+": "+text)
 
+def shortenFilePath(filePath):
+    filePath = filePath[2:len(filePath)]
+    homepath = os.path.expanduser("~")
+    homepath = homepath[2:len(homepath)]
+    homepath = homepath.replace("\\","/")
+    return filePath.replace(homepath,"~")
+
 def RefreshGUI(selection=-1):
     isNewFile = (root.numatb == "")
 
     #Change header text based on openfile
-    newFileText = "New File" if isNewFile else truncate(root.numatb,limit=40) 
+    newFileText = "New File" if isNewFile else shortenFilePath(root.numatb)
     root.matlLabel.config(text=newFileText)
 
     #gray out Save based on newFile
@@ -427,11 +439,15 @@ def ReadAllParams(params):
 
 #converts shader_label to shader_Name and render_Name
 def GetShaderNames(shader):
-    _s = shader.rfind("_")
-    shaderName = shader[0:_s]
-    renderName = shader[_s+1:len(shader)]
+    #_s = shader.rfind("_")
+    #shaderName = shader[0:_s]
+    #renderName = shader[_s+1:len(shader)]
+    shaderName = GetShaderID(shader)
+    renderName = GetRenderFromShader(shader)
     return shaderName,renderName
 
+
+root.renderPasses = {"opaque","sort","near","far"}
 def RefreshGUI_Info():
     #Clear any prior information
     root.shaderButton.config(text = "")
@@ -449,11 +465,11 @@ def RefreshGUI_Info():
     root.shaderButton.config(text = shaderName)
 
     #repopulate renderOptions combobox and set to current value
-    root.renderOptions['values'] = ('opaque', 
-                          'sort',
-                          'near',
-                          'far')
-
+    root.renderOptions['values'] = ("opaque", 
+                          "sort",
+                          "near",
+                          "far",
+                          )
     renderValue = root.renderOptions['values'].index(renderName)
     root.renderOptions.current(renderValue)
     #fill out parameter box
@@ -507,12 +523,12 @@ def RevertStatus():
 
 status = Label(root, text=truncate(root.pythonInfo,E,14,False), bd=1, relief=SUNKEN, anchor=E)
 status.pack(side = BOTTOM, fill=X)
+root.matlLabel = Label(root, text="", bd=1, relief=SUNKEN, anchor=W)
+root.matlLabel.pack(fill=X)
 
 
-fr_Material = PanedWindow(orient = VERTICAL,borderwidth=10,width = root.width/2)  
+fr_Material = PanedWindow(orient = VERTICAL,borderwidth=10)  
 fr_Material.pack(side = LEFT, fill = BOTH, expand = 1)  
-root.matlLabel = Label(root, text="", bd=1, relief=SUNKEN, anchor=N)
-fr_Material.add(root.matlLabel)
 
 def getSelectedMaterial():
     selection = root.list_Material.curselection()
@@ -526,7 +542,7 @@ def onMaterialSelected(event):
     
 root.list_Material = Listbox(fr_Material,
                   height = 10, 
-                  width = 15, 
+                  width = 30, 
                   #bg = "grey",
                   activestyle = 'dotbox', 
                   font = "Helvetica",
@@ -724,17 +740,17 @@ def menu_listMaterial_popup(event):
 root.list_Material.bind("<Button-3>", menu_listMaterial_popup)
 
 
-fr_Info = PanedWindow(orient = VERTICAL,borderwidth=10,width = (root.width/2))  
+fr_Info = PanedWindow(orient = VERTICAL,borderwidth=10)  
 fr_Info.pack(side = RIGHT,fill = BOTH, expand = 1)
-fr_Info_label = Label(root, text="Shader Info", bd=1, relief=SUNKEN, anchor=N)
-fr_Info.add(fr_Info_label)
+#fr_Info_label = Label(root, text="Shader Info", bd=1, relief=SUNKEN, anchor=N)
+#fr_Info.add(fr_Info_label)
 
 fr_Shader = Frame(fr_Info)
 fr_Info.add(fr_Shader)
 
 
 def GetShader(shaderName):
-    shaderName = shaderName
+    shaderName = GetShaderID(shaderName)
     connection = sqlite3.connect(root.dbShader)
     cursor = connection.cursor()
     cursor.execute("""SELECT * FROM ShaderProgram WHERE Name = ?""", (shaderName,))
@@ -783,7 +799,7 @@ def GetBlendState():
 
     return data
 def GetRasterizer():
-    connection = sqlite3.connect("smush_materials_v13.0.1.db")
+    connection = sqlite3.connect(root.dbMaterial)
     cursor = connection.cursor()
     query = """SELECT * FROM RasterizerState WHERE MaterialId = ?"""
     qfilter = root.matID
@@ -800,7 +816,7 @@ def GetRasterizer():
 def GetSampler():
     #look up the Sampler Table to see if a row has the same materialId and paramId as our arguments
     #or just yolo 
-    connection = sqlite3.connect("smush_materials_v13.0.1.db")
+    connection = sqlite3.connect(root.dbMaterial)
     cursor = connection.cursor()
     query = """SELECT * FROM Sampler WHERE MaterialId = ?"""
     qfilter = root.matID
@@ -823,15 +839,21 @@ def GetSampler():
     return data
 
 
-root.matID = 0
-def GetMaterialID(shaderLabel):
-    #provided a shaderLabel, search through Materials and find the MatlId.
-    connection = sqlite3.connect("smush_materials_v13.0.1.db")
+def QueryMaterialID(shaderLabel):
+    connection = sqlite3.connect(root.dbMaterial)
     cursor = connection.cursor()
-    query = """SELECT MatlId FROM Material WHERE ShaderLabel = ?"""
-    qfilter = shaderLabel
+    query = """SELECT MatlId FROM Material WHERE ShaderLabel LIKE ?"""
+    qfilter = "%"+shaderLabel+"%"
     cursor.execute(query, (qfilter,))
     record = cursor.fetchone() #yolo
+    return record
+
+def GetMaterialID(shaderLabel):
+    print(shaderLabel)
+    record = QueryMaterialID(shaderLabel)
+    if (record == None):
+        record = QueryMaterialID(GetShaderID(shaderLabel))
+
     return record[0]
 
 #Create Parameters
@@ -853,38 +875,60 @@ def CreateSampler(param,oldmatl,newmatl):
     newObject = ssbh_data_py.matl_data.SamplerParam(param,data)
     newmatl.samplers.append(newObject)
 
+root.defaultFloats = {
+    -1 : 1,
+    8 : 0.4
+}
 def CreateFloat(param,oldmatl,newmatl):
-    data = 1.0
+    data = AssignDefaultParam(param,root.defaultFloats)
     newObject = ssbh_data_py.matl_data.FloatParam(param,data)
     newmatl.floats.append(newObject)
 
 def CreateBool(param,oldmatl,newmatl):
-    data = False
+    data = True
     newObject = ssbh_data_py.matl_data.BooleanParam(param,data)
     newmatl.booleans.append(newObject)
 
+root.defaultVectors = {
+    -1 : [1.0,1.0,1.0,1.0],
+    0 : [1.0,0.0,0.0,0.0],
+    6 : [1.0,1.0,0.0,0.0],
+    11 : [0.25,0.033,0.0,1.0],
+    47 : [0.0,0.5,1.0,0.16]
+}
 def CreateVector(param,oldmatl,newmatl):
     #default value idk
-    data = [1.0,1.0,1.0,0.0]
+    data = AssignDefaultParam(param,root.defaultVectors)
     newObject = ssbh_data_py.matl_data.Vector4Param(param,data)
     newmatl.vectors.append(newObject)
 
+root.defaultTextures = {
+    -1 : "/common/shader/sfxPBS/default_White",
+    2 : "#replace_cubemap",
+    4 : "/common/shader/sfxPBS/default_Normal",
+    5 : "/common/shader/sfxPBS/default_Black",
+    6 : "/common/shader/sfxPBS/default_Params",
+    7 : "#replace_cubemap",
+    8 : "#replace_cubemap",
+    9 : "/common/shader/sfxPBS/default_Gray",
+    14 : "/common/shader/sfxPBS/default_Black"
+}
 def CreateTexture(param,oldmatl,newmatl):
-    data = r"/common/shader/sfxPBS/default_White"
-    textureID = [int(s) for s in re.findall(r"\d+",param.name)]
-    textureID = textureID[0]
-    print(textureID)
+    data = AssignDefaultParam(param,root.defaultTextures)
+    #textureID = [int(s) for s in re.findall(r"\d+",param.name)]
+    #textureID = textureID[0]
+    #print(textureID)
     #wish python3.9 had switch case
-    if textureID == 4:
-        data = "/common/shader/sfxPBS/default_Normal"
-    if textureID == 5 or textureID ==  14: #EMI should be black, maybe gray?
-        data = "/common/shader/sfxPBS/default_Black"
-    if textureID == 6:
-        data = "/common/shader/sfxPBS/default_Params"
-    if textureID == 2 or textureID ==  7 or textureID ==  8:
-        data = "#replace_cubemap"
-    if textureID == 9: #Baked lighting should be relatively dark
-        data = "/common/shader/sfxPBS/default_Gray"
+    #if textureID == 4:
+    #    data = "/common/shader/sfxPBS/default_Normal"
+    #if textureID == 5 or textureID ==  14: #EMI should be black, maybe gray?
+    #    data = "/common/shader/sfxPBS/default_Black"
+    #if textureID == 6:
+    #    data = "/common/shader/sfxPBS/default_Params"
+    #if textureID == 2 or textureID ==  7 or textureID ==  8:
+    #    data = "#replace_cubemap"
+    #if textureID == 9: #Baked lighting should be relatively dark
+    #    data = "/common/shader/sfxPBS/default_Gray"
     #See if we can preserve the texture
     for i in oldmatl.textures:
         if (str(i.param_id) == str(param)):
@@ -894,21 +938,39 @@ def CreateTexture(param,oldmatl,newmatl):
     newObject = ssbh_data_py.matl_data.TextureParam(param,data)
     newmatl.textures.append(newObject)
 
+def AssignDefaultParam(param,defaults):
+    textureID = [int(s) for s in re.findall(r"\d+",param.name)]
+    textureID = textureID[0]
+    return defaults.get(textureID,defaults.get(-1))
+
 def ParameterError(param,oldmatl,newmatl):
     message(type="error",text="wtf is that parameter?")
     root.withdraw()
     sys.exit("unknown parameter")
 
+
+def GetShaderID(shaderLabel):
+    if (shaderLabel.find("SFX_PBS_")<0):
+        shaderLabel = "SFX_PBS_" + shaderLabel
+    for r in root.renderPasses:
+        renderLabel = shaderLabel.find(r)
+        if (renderLabel>-1):
+            shaderLabel = shaderLabel[0:renderLabel-1]
+    return shaderLabel
+
+def GetRenderFromShader(shaderLabel):
+    for r in root.renderPasses:
+        renderLabel = shaderLabel.find(r)
+        if (renderLabel>-1):
+            return shaderLabel[renderLabel:len(shaderLabel)]
+    return ""
+
 def ChangeShaderConfirm():
     root.deiconify()
     #Check to see if shader label is valid, if not, return to normal
     newName = root.popup.entryLabel.get()
-    if (newName.find("SFX_PBS_")<0):
-        newName = "SFX_PBS_" + newName
-    for r in root.renderOptions["values"]:
-        renderLabel = newName.find(r)
-        if (renderLabel>-1):
-            newName = newName[:renderLabel-1]
+    if (GetRenderFromShader(newName) == ""):
+        newName = newName+"_"+ root.renderOptions.get()
         
     root.popup.destroy()
     ChangeShader(newName)
@@ -922,6 +984,7 @@ def ChangeShader(newName):
     if (selection <0):
         return
 
+    print("looking for:" +newName)
     newShaderID,newShaderName = GetShader(newName)
     if (newShaderName == None):
         message(type = "error", text = "Not a valid shader!")
@@ -929,9 +992,13 @@ def ChangeShader(newName):
 
     #create new name for label and update GUI
     entry = root.matl.entries[selection]
-    shaderName,renderName = GetShaderNames(entry.shader_label)
-    entry.shader_label = newName+"_"+renderName
+    shaderName,renderName = GetShaderNames(newName)
+    if (renderName == ""):
+        renderName = "opaque"
+
+    entry.shader_label = shaderName+"_"+renderName
     root.shaderButton.config(text = newName)
+    print("found:"+entry.shader_label)
 
     newEntry = ssbh_data_py.matl_data.MatlEntryData(entry.material_label,entry.shader_label)
     #editing Current is possible new way
@@ -978,7 +1045,7 @@ def ChangeShader(newName):
         entry.samplers.pop(0)
 
 
-    #RefreshGUI(selection)
+    root.list_Material.select_set(selection)
     RefreshGUI_Info()
     ChangedNumatb()
     SetStatus("Updated shader for "+newEntry.material_label)
@@ -994,9 +1061,11 @@ def ChangeShaderPopUp():
             webbrowser.open('https://github.com/ScanMountGoat/Smush-Material-Research/tree/master/Value%20Dumps')
         return
 
-    res = messagebox.askyesno(root.title(), 'Shader changing is experimental! Make sure you double check in CrossMod that everything looks alright. Proceed?',icon ='warning')
-    if res == False:
-        return
+    if (root.shaderWarning == False):
+        res = messagebox.askyesno(root.title(), 'Shader changing is experimental! Make sure you double check in CrossMod that everything looks alright. Proceed?',icon ='warning')
+        if res == False:
+            return
+        root.shaderWarning = True
 
     root.popup = Toplevel()
     selection = getSelectedMaterial()
