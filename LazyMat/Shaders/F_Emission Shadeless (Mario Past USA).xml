@@ -1,4 +1,4 @@
-  <material name="SFX_PBS_0002000008088280_#render#" label="#material#">
+<material name="SFX_PBS_0000000000080100_opaque" label="F_Emission Shadeless (Mario Past USA)">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
@@ -15,8 +15,13 @@
         <Unk12>0</Unk12>
       </blend_state>
     </param>
-    <param name="CustomBoolean12">
-      <bool>false</bool>
+    <param name="CustomVector3">
+      <vector4>
+        <X>1</X>
+        <Y>1</Y>
+        <Z>1</Z>
+        <W>1</W>
+      </vector4>
     </param>
     <param name="CustomVector8">
       <vector4>
@@ -24,22 +29,6 @@
         <Y>1</Y>
         <Z>1</Z>
         <W>1</W>
-      </vector4>
-    </param>
-    <param name="CustomVector13">
-      <vector4>
-        <X>1</X>
-        <Y>1</Y>
-        <Z>1</Z>
-        <W>1</W>
-      </vector4>
-    </param>
-    <param name="CustomVector27">
-      <vector4>
-        <X>1</X>
-        <Y>0</Y>
-        <Z>0</Z>
-        <W>0</W>
       </vector4>
     </param>
     <param name="RasterizerState0">
@@ -54,14 +43,14 @@
         <Unk8>0</Unk8>
       </rasterizer_state>
     </param>
-    <param name="Sampler0">
+    <param name="Sampler5">
       <sampler>
         <WrapS>Repeat</WrapS>
         <WrapT>Repeat</WrapT>
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default</TextureFilteringType>
+        <TextureFilteringType>AnisotropicFiltering</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -71,37 +60,13 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>1</MaxAnisotropy>
+        <MaxAnisotropy>2</MaxAnisotropy>
       </sampler>
     </param>
-    <param name="Sampler9">
-      <sampler>
-        <WrapS>Repeat</WrapS>
-        <WrapT>Repeat</WrapT>
-        <WrapR>Repeat</WrapR>
-        <MinFilter>LinearMipmapLinear</MinFilter>
-        <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default</TextureFilteringType>
-        <BorderColor>
-          <X>0</X>
-          <Y>0</Y>
-          <Z>0</Z>
-          <W>0</W>
-        </BorderColor>
-        <Unk11>0</Unk11>
-        <Unk12>2139095022</Unk12>
-        <LodBias>0</LodBias>
-        <MaxAnisotropy>1</MaxAnisotropy>
-      </sampler>
-    </param>
-    <param name="Texture0">
+    <param name="Texture5">
       <string>
-        <Text>#texture#</Text>
-      </string>
-    </param>
-    <param name="Texture9">
-      <string>
-        <Text>#baked#</Text>
+        <Text>/common/shader/sfxPBS/default_Black</Text>
       </string>
     </param>
   </material>
+  

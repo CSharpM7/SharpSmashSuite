@@ -1,4 +1,4 @@
- <material name="SFX_PBS_0000008000808089_#render#" label="#material#">
+<material name="SFX_PBS_010000000808ba68_opaque" label="F_CustomVector47 No PRM (Dedede)">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
@@ -18,15 +18,13 @@
     <param name="CustomBoolean1">
       <bool>true</bool>
     </param>
-    <param name="CustomVector13">
-      <vector4>
-        <X>1</X>
-        <Y>1</Y>
-        <Z>1</Z>
-        <W>1</W>
-      </vector4>
+    <param name="CustomBoolean3">
+      <bool>true</bool>
     </param>
-    <param name="CustomVector27">
+    <param name="CustomBoolean4">
+      <bool>true</bool>
+    </param>
+    <param name="CustomVector0">
       <vector4>
         <X>1</X>
         <Y>0</Y>
@@ -40,6 +38,30 @@
         <Y>1</Y>
         <Z>1</Z>
         <W>1</W>
+      </vector4>
+    </param>
+    <param name="CustomVector13">
+      <vector4>
+        <X>1</X>
+        <Y>1</Y>
+        <Z>1</Z>
+        <W>1</W>
+      </vector4>
+    </param>
+    <param name="CustomVector14">
+      <vector4>
+        <X>1</X>
+        <Y>1</Y>
+        <Z>1</Z>
+        <W>1</W>
+      </vector4>
+    </param>
+    <param name="CustomVector47">
+      <vector4>
+        <X>0</X>
+        <Y>0.5</Y>
+        <Z>1</Z>
+        <W>0.16</W>
       </vector4>
     </param>
     <param name="RasterizerState0">
@@ -94,47 +116,7 @@
         <MaxAnisotropy>2</MaxAnisotropy>
       </sampler>
     </param>
-    <param name="Sampler6">
-      <sampler>
-        <WrapS>Repeat</WrapS>
-        <WrapT>Repeat</WrapT>
-        <WrapR>Repeat</WrapR>
-        <MinFilter>LinearMipmapLinear</MinFilter>
-        <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
-        <BorderColor>
-          <X>0</X>
-          <Y>0</Y>
-          <Z>0</Z>
-          <W>0</W>
-        </BorderColor>
-        <Unk11>0</Unk11>
-        <Unk12>2139095022</Unk12>
-        <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
-      </sampler>
-    </param>
     <param name="Sampler7">
-      <sampler>
-        <WrapS>ClampToEdge</WrapS>
-        <WrapT>ClampToEdge</WrapT>
-        <WrapR>ClampToEdge</WrapR>
-        <MinFilter>LinearMipmapLinear</MinFilter>
-        <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
-        <BorderColor>
-          <X>0</X>
-          <Y>0</Y>
-          <Z>0</Z>
-          <W>0</W>
-        </BorderColor>
-        <Unk11>0</Unk11>
-        <Unk12>2139095022</Unk12>
-        <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
-      </sampler>
-    </param>
-    <param name="Sampler9">
       <sampler>
         <WrapS>Repeat</WrapS>
         <WrapT>Repeat</WrapT>
@@ -156,27 +138,18 @@
     </param>
     <param name="Texture0">
       <string>
-        <Text>#texture#</Text>
+        <Text>/common/shader/sfxPBS/default_Gray</Text>
       </string>
     </param>
     <param name="Texture4">
       <string>
-        <Text>#normal#</Text>
-      </string>
-    </param>
-    <param name="Texture6">
-      <string>
-        <Text>#prm#</Text>
+        <Text>/common/shader/sfxPBS/default_Normal</Text>
       </string>
     </param>
     <param name="Texture7">
       <string>
-        <Text>#specular#</Text>
+        <Text>#replace_cubemap</Text>
       </string>
     </param>
-    <param name="Texture9">
-      <string>
-        <Text>#baked#</Text>
-      </string>
-    </param>
-  </material> 
+  </material>
+  

@@ -38,6 +38,7 @@ defaultConfig['DEFAULT'] = {
     'presetLocation' : "",
     'matlabLocation' : "",
     'crossmodLocation' : "",
+    'lazymatLocation' : "",
     }
 
 def CreateConfig():
@@ -121,6 +122,7 @@ def GetLocation(foldername,nickname):
             with open('config.ini', 'w+') as configfile:
                 config.write(configfile)
     return location
+
 def GetMatLab():
     #Make sure matlab folder exists
     matLab = GetLocation("matlabLocation","MatLab")
@@ -128,7 +130,7 @@ def GetMatLab():
         return ""
 
     #Make sure matlab exe exists
-    matLab = matLab+"\\MatLab.exe"
+    matLab = matLab+"/MatLab.exe"
     if (os.path.isfile(matLab) == False):
         message(type="error",text="MatLab.exe is missing from MatLab folder!")
         config.set("DEFAULT","matlabLocation","")
@@ -137,8 +139,12 @@ def GetMatLab():
         return ""
 
     return matLab
+def GetLazyMat():
+    return GetLocation("lazymatLocation","LazyMat")
+
 def GetCrossMod():
     return GetLocation("crossmodLocation","CrossMod")
+
 def CreateXML():
     matLab = GetMatLab()
     if (matLab == ""):
@@ -152,26 +158,33 @@ def CreateXML():
     outputFile.close()
 
     #run matlab
-    SetStatus("Running MatLab...")
+    SetStatus("Running MatLab..."+root.presetNumatb)
     root.exportLocation = root.presetNumatb.replace("numatb","xml")
     subcall = [matLab,root.presetNumatb,root.exportLocation]
     with open('output.txt', 'a+') as stdout_file:
         process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
         print(process_output.__dict__)
-    return True
+        return True
+
 
 def ExportPreset():
     xmlCreated = CreateXML()
     if (xmlCreated == False):
         return
+    lazyMat = GetLazyMat()
+    if (lazyMat == ""):
+        return
 
-    exportDir = filedialog.askdirectory(title = "Select ""Shader"" folder inside LazyMat")
-    if (os.path.isdir(exportDir)):
-        message(type="error",text="Invalid folder")
-        return False
+    print(lazyMat)
+    exportDir = lazyMat+"/Shaders"
+    print(exportDir)
+    if (os.path.isdir(exportDir)==False):
+        message(type="error",text="LazyMat is missing the Shaders folder!")
+        config.set("DEFAULT","lazymatLocation","")
+        with open('config.ini', 'w+') as configfile:
+            config.write(configfile)
+        return
 
-    outputFile = open(root.exportLocation,'w+')
-    outputFile.close()
     with open(root.exportLocation, encoding='utf-8', errors='replace') as file:
         context = ET.iterparse(file, events=('end',))
         for event, elem in context:

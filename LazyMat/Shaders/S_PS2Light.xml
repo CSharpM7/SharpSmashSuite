@@ -1,28 +1,28 @@
-  <material name="SFX_PBS_0000000009090241_#render#" label="#material#">
+<material name="SFX_PBS_0000000000094100_far" label="S_PS2Light">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
         <Unk2>0</Unk2>
-        <DestinationColor>OneMinusSourceAlpha</DestinationColor>
-        <Unk4>0</Unk4>
+        <DestinationColor>One</DestinationColor>
+        <Unk4>1</Unk4>
         <Unk5>0</Unk5>
-        <Unk6>6</Unk6>
+        <Unk6>0</Unk6>
         <Unk7>0</Unk7>
         <Unk8>0</Unk8>
         <Unk9>0</Unk9>
-        <Unk10>0</Unk10>
+        <Unk10>5</Unk10>
         <Unk11>0</Unk11>
         <Unk12>0</Unk12>
       </blend_state>
     </param>
     <param name="CustomBoolean2">
-      <bool>false</bool>
+      <bool>true</bool>
     </param>
-    <param name="CustomVector13">
+    <param name="CustomVector3">
       <vector4>
-        <X>0.5</X>
-        <Y>0.5</Y>
-        <Z>0.5</Z>
+        <X>1</X>
+        <Y>1</Y>
+        <Z>1</Z>
         <W>1</W>
       </vector4>
     </param>
@@ -46,14 +46,14 @@
         <Unk8>0</Unk8>
       </rasterizer_state>
     </param>
-    <param name="Sampler0">
+    <param name="Sampler5">
       <sampler>
         <WrapS>Repeat</WrapS>
         <WrapT>Repeat</WrapT>
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -62,38 +62,14 @@
         </BorderColor>
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
-        <LodBias>-1</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <LodBias>0</LodBias>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
-    <param name="Sampler4">
-      <sampler>
-        <WrapS>Repeat</WrapS>
-        <WrapT>Repeat</WrapT>
-        <WrapR>Repeat</WrapR>
-        <MinFilter>LinearMipmapLinear</MinFilter>
-        <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
-        <BorderColor>
-          <X>0</X>
-          <Y>0</Y>
-          <Z>0</Z>
-          <W>0</W>
-        </BorderColor>
-        <Unk11>0</Unk11>
-        <Unk12>2139095022</Unk12>
-        <LodBias>-1</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
-      </sampler>
-    </param>
-    <param name="Texture0">
+    <param name="Texture5">
       <string>
-        <Text>#texture#</Text>
-      </string>
-    </param>
-    <param name="Texture4">
-      <string>
-        <Text>#normal#</Text>
+        <Text>/common/shader/sfxPBS/default_Gray</Text>
       </string>
     </param>
   </material>
+  

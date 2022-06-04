@@ -1,9 +1,9 @@
-<material name="SFX_PBS_0000000000094100_#render#" label="#material#">
+<material name="SFX_PBS_000010000000c100_opaque" label="S_Default_Emission">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
         <Unk2>0</Unk2>
-        <DestinationColor>One</DestinationColor>
+        <DestinationColor>Zero</DestinationColor>
         <Unk4>1</Unk4>
         <Unk5>0</Unk5>
         <Unk6>0</Unk6>
@@ -15,8 +15,13 @@
         <Unk12>0</Unk12>
       </blend_state>
     </param>
-    <param name="CustomBoolean2">
-      <bool>true</bool>
+    <param name="CustomVector27">
+      <vector4>
+        <X>0.8</X>
+        <Y>0</Y>
+        <Z>0</Z>
+        <W>0</W>
+      </vector4>
     </param>
     <param name="CustomVector3">
       <vector4>
@@ -68,7 +73,8 @@
     </param>
     <param name="Texture5">
       <string>
-        <Text>#texture#</Text>
+        <Text>/common/shader/sfxPBS/default_Gray</Text>
       </string>
     </param>
   </material>
+  
