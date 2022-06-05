@@ -31,23 +31,33 @@ root.withdraw()
 
 #open folder dialogue
 def setsearchDir():
-    root.searchDir = filedialog.askdirectory(title = "Select the ""stage"" folder of your mod")
+    messagebox.showinfo(root.title(),"Select your mod's main folder")
+    root.searchDir = filedialog.askdirectory(title = "Select your mod's main folder")
     if (root.searchDir == ""):
         root.destroy()
         sys.exit("Invalid folder")
-    ValidateSearch()
-
-#make sure that it is a validated search folder, otherwise quit
-def ValidateSearch():
-    root.searchDirName = os.path.basename(root.searchDir)
-    if (root.searchDirName != "stage"):
-        messagebox.showerror(root.title(),"Please select a folder with the ""stage"" name in your mod!")
+    if (IsValidSearch() == False):
+        messagebox.showerror(root.title(),"Please select the root of your mod's folder! This folder should contain a stage or fighter folder within it!")
         root.destroy()
         sys.exit("Not a stage folder")
         
 
+#make sure that it is a validated search folder, otherwise quit
+def IsValidSearch():
+    root.searchDirName = os.path.basename(root.searchDir)
+    if (root.searchDirName == "stage"):
+        return True
+    else:
+        subfolders = [f.path for f in os.scandir(root.searchDir) if f.is_dir()]
+        for dirname in list(subfolders):
+            if (os.path.basename(dirname) == "stage"):
+                return True
+    return False
+        
+
 #Set Search Dir
 root.searchDir = config["DEFAULT"]["searchDir"]
+root.stageDir = ""
 if (not os.path.isdir(root.searchDir)):
     root.searchDir = ""
     
@@ -75,6 +85,7 @@ data = {}
 data["new-dir-files"] = {}
 addFiles = data["new-dir-files"]
 
+
 #recursively scan subfolders to find "model" folders
 def scanSubFolders(dir,modelFolders):
     folderName = os.path.basename(dir)
@@ -86,8 +97,32 @@ def scanSubFolders(dir,modelFolders):
         subfolders.extend(scanSubFolders(dirname,modelFolders))
     return subfolders,modelFolders
 
+#start of recursion, this will only begin recursive search if the directory name is a whitelist,
+#or a subfolder in the directory is in the whitelist
+def scanSubFoldersStart(dir,modelFolders):
+    whitelist = ["fighter","stage"]
 
-subfolders,modelFolders = scanSubFolders(root.searchDir,[])
+    #check if current folder is in whitelist
+    folderName = os.path.basename(dir)
+    for w in list(whitelist):
+        if (folderName.lower() == w.lower()):
+            subfolders.append(scanSubFolders(dir,modelFolders))
+            return subfolders,modelFolders
+
+    #check if subfolders are in whitelist
+    subfolders = [f.path for f in os.scandir(dir) if f.is_dir()]
+    for dirname in list(subfolders):
+        for w in list(whitelist):
+            if (os.path.basename(dirname).lower() == w.lower()):
+                subfolders.extend(scanSubFolders(dirname,modelFolders))
+    return subfolders,modelFolders
+
+
+subfolders,modelFolders = scanSubFoldersStart(root.searchDir,[])
+if (len(modelFolders)==0):
+    messagebox.showinfo(root.title(),"Nothing to add to config.json")
+    root.destroy()
+    sys.exit("Nothing came of scan")
 #trims a file/folder name to stage/*
 def trimName(file):
     print(file)
