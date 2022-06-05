@@ -1,4 +1,4 @@
-<material name="SFX_PBS_000000080009c100_opaque" label="S_Scroll">
+<material name="SFX_PBS_000000080009c100_sort" label="S_Scroll">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>

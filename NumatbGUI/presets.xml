@@ -120,7 +120,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -130,7 +130,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler7">
@@ -140,7 +140,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -150,7 +150,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Texture0">
@@ -270,7 +270,7 @@
         <WrapR>ClampToEdge</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -280,7 +280,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler4">
@@ -290,7 +290,7 @@
         <WrapR>ClampToEdge</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -300,7 +300,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler5">
@@ -310,7 +310,7 @@
         <WrapR>ClampToEdge</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -320,7 +320,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler6">
@@ -330,7 +330,7 @@
         <WrapR>ClampToEdge</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -340,7 +340,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler7">
@@ -350,7 +350,7 @@
         <WrapR>ClampToEdge</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -360,7 +360,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Texture0">
@@ -389,7 +389,7 @@
       </string>
     </param>
   </material>
-  <material name="SFX_PBS_0100000008018279_opaque" label="F_Glass (Olimar Helmet)">
+  <material name="SFX_PBS_0100000008018279_sort" label="F_Glass (Olimar Helmet)">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
@@ -475,7 +475,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -485,7 +485,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler4">
@@ -495,7 +495,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -505,7 +505,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler6">
@@ -515,7 +515,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -525,7 +525,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler7">
@@ -535,7 +535,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -545,7 +545,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Texture0">
@@ -665,7 +665,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -675,7 +675,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler4">
@@ -705,7 +705,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -715,7 +715,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler7">
@@ -725,7 +725,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -735,7 +735,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Texture0">
@@ -915,7 +915,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -925,7 +925,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler4">
@@ -935,7 +935,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -945,7 +945,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler7">
@@ -955,7 +955,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -965,7 +965,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Texture0">
@@ -1028,7 +1028,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -1038,7 +1038,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Texture8">
@@ -1130,7 +1130,7 @@
         <WrapR>ClampToEdge</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -1140,7 +1140,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler4">
@@ -1150,7 +1150,7 @@
         <WrapR>ClampToEdge</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -1160,7 +1160,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler6">
@@ -1170,7 +1170,7 @@
         <WrapR>ClampToEdge</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -1180,7 +1180,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler7">
@@ -1190,7 +1190,7 @@
         <WrapR>ClampToEdge</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
         <MagFilter>Linear</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -1200,7 +1200,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Texture0">
@@ -1304,7 +1304,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>Nearest</MinFilter>
         <MagFilter>Nearest</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -1314,7 +1314,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler5">
@@ -1324,7 +1324,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>Nearest</MinFilter>
         <MagFilter>Nearest</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -1334,7 +1334,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Sampler7">
@@ -1344,7 +1344,7 @@
         <WrapR>Repeat</WrapR>
         <MinFilter>Nearest</MinFilter>
         <MagFilter>Nearest</MagFilter>
-        <TextureFilteringType>Default2</TextureFilteringType>
+        <TextureFilteringType>Default</TextureFilteringType>
         <BorderColor>
           <X>0</X>
           <Y>0</Y>
@@ -1354,7 +1354,7 @@
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
         <LodBias>0</LodBias>
-        <MaxAnisotropy>2</MaxAnisotropy>
+        <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
     <param name="Texture4">
@@ -2054,7 +2054,7 @@
       </string>
     </param>
   </material>
-  <material name="SFX_PBS_000000080009c100_opaque" label="S_Scroll">
+  <material name="SFX_PBS_000000080009c100_sort" label="S_Scroll">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
