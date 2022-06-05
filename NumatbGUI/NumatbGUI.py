@@ -175,9 +175,7 @@ def ExportPreset():
     if (lazyMat == ""):
         return
 
-    print(lazyMat)
     exportDir = lazyMat+"/Shaders"
-    print(exportDir)
     if (os.path.isdir(exportDir)==False):
         message(type="error",text="LazyMat is missing the Shaders folder!")
         config.set("DEFAULT","lazymatLocation","")
