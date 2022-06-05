@@ -168,6 +168,13 @@ def CreateXML():
 
 
 def ExportPreset():
+    if IsEditingPreset():
+        res = messagebox.askyesno(root.title(), "You'll need to save the preset file before exporting. Save now?",icon ='warning')
+        if res == True:
+            SaveNumatb()
+        else:
+            return
+
     xmlCreated = CreateXML()
     if (xmlCreated == False):
         return
@@ -576,12 +583,14 @@ def AddPreset():
     root.preset.save(root.presetNumatb)
     message("Added "+currentEntry.material_label+" to presets!")
 
+def IsEditingPreset():
+    return root.numatb == root.presetNumatb
 
 def UpdatePresetMenus():
     #Disable preset commands if you're editing the preset file!
     hasPreset = "normal" if os.path.isfile(root.presetNumatb) else "disabled"
     if (hasPreset=="normal"):
-        if (root.numatb == root.presetNumatb):
+        if IsEditingPreset():
             hasPreset = "disabled"
     menu_listMaterial.entryconfigure(0, state=hasPreset)
     menu_listMaterial.entryconfigure(1, state=hasPreset)
