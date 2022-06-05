@@ -93,7 +93,7 @@ if (ValidExe() == False):
         config.set("DEFAULT","img2nutexbLocation",defaultLocation)
         message("ERROR","Selected file not valid")
         root.destroy()
-        sys.exit("No img2nutexb file")
+        sys.exit("No img2nutexb.exe file")
 
     #write new location to config
     config.set("DEFAULT","img2nutexbLocation",imgnutexbLocation)
@@ -248,13 +248,38 @@ def run():
         textures.remove("")
 
     rewriteList=False
+    overwritePrompt=True
+    overwriteFiles=True
     printAndWrite("Running...")
     #For each texture, see if we can run the program
     for i in range(len(textures)):
         t = textures[i]
         #ignore files with the common tag
-        if (t.find("/common/")==True):
+        if (t.find("/common/")>-1):
+            printAndWrite(t + " is a common file; skipping")
             continue
+        #ignore files we know do not exist
+        if (t.startswith("$DNE_")):
+            continue
+
+        #find the desired new name
+        split_tup = os.path.splitext(t)
+        newNutexb = root.destDir + "/" +split_tup[0]+".nutexb"
+        #replace nrm with nor
+        newNutexb = newNutexb.replace("_nrm.nutexb","_nor.nutexb")
+        
+        #if we find a file that already exists, ask to overwrite
+        if (os.path.isfile(newNutexb)):
+            if (overwritePrompt):
+                overwritePrompt = False
+                res = messagebox.askyesno(root.title(), "Some files already exists in the destination directory! Overwrite all files?",icon ='warning')
+                if res == False:
+                    overwriteFiles=False
+                    continue
+            elif (overwriteFiles == False):
+                printAndWrite(t + " exists and will not overwrite")
+                continue
+            
 
         fileNameExists=True
         #if search target does not have an extension, let's find it
@@ -280,18 +305,15 @@ def run():
         
         #if file doesn't exist, skip
         if (not fileNameExists):
+            textures[i] = "$DNE_" + t
             printAndWrite(t + " does not exist")
             continue
         #if it's not an image file, ignore it
         if (not ValidImage(targetFile)):
+            textures[i] = "$DNE_" + t
             printAndWrite(os.path.basename(targetFile) + " is not an image file")
             continue
         
-        #create new name for nutexb texture
-        split_tup = os.path.splitext(t)
-        newNutexb = root.destDir + "/" +split_tup[0]+".nutexb"
-
-
         #clone blank file
         shutil.copy(blankFile,newNutexb)
         #run program on it depending on if the text file ends in dds
@@ -302,9 +324,9 @@ def run():
         #output any errors to a textfile
         with open('output.txt', 'a+') as stdout_file:
             process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
-            print(process_output.__dict__)
+            #print(process_output.__dict__)
                 
-        printAndWrite("Created "+split_tup[0])
+        printAndWrite("Created "+os.path.basename(newNutexb))
         
 
     #Only rewrite if necessary
@@ -327,7 +349,14 @@ def run():
 
 #create run button
 run_btn = Button(searchFrame, text="Run", command=run,anchor=S)
-searchFrame.add(run_btn,pady=30)      
+searchFrame.add(run_btn,pady=30)
+
+#on window closed
+def onClosed():
+    root.destroy()
+    sys.exit("User exited")
     
+
+root.protocol("WM_DELETE_WINDOW", onClosed)
 root.mainloop()
 
