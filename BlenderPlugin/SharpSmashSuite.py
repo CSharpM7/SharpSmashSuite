@@ -341,9 +341,6 @@ class SharpSmashSuite_OT_separate(Operator):
             if (self.replace == True):
                 bpy.data.objects.remove(obj, do_unlink=True)
              
-                
-            if (self.replace == True):
-                bpy.data.objects.remove(obj, do_unlink=True)
         
         
         report(self,{'INFO'}, "Objects seperated")
