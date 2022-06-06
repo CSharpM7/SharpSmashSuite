@@ -16,6 +16,7 @@ bl_info = {
 
 #Used to print to Blender Console, as well as system window
 def console_print(*args, **kwargs):
+    return
     for a in context.screen.areas:
         if a.type == 'CONSOLE':
             c = {}

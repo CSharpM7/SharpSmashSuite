@@ -281,27 +281,27 @@ def run():
                 continue
             
 
-        fileNameExists=True
         #if search target does not have an extension, let's find it
         if (t.find(".")<0):
-            fileNameExists=False
             for (dirpath, dirnames, filenames) in os.walk(root.searchDir):
                 #print([os.path.join(dirpath, file) for file in filenames])
                 for filename in filenames:
                     split_tup = os.path.splitext(filename)
                     basename = split_tup[0]
                     if (basename == t):
-                        fileNameExists=True
                         #Set rewrite list to true, helps prevent looping through all files in the future
                         rewriteList=True
                         #update t
                         t = t+split_tup[1]
                         #update the item in the list
                         textures[i] = t
-                        break   
+                        break
+                    
+
              
         #create name of search target
         targetFile = root.searchDir + "/" + t
+        fileNameExists = os.path.isfile(targetFile)
         
         #if file doesn't exist, skip
         if (not fileNameExists):
@@ -316,6 +316,9 @@ def run():
         
         #clone blank file
         shutil.copy(blankFile,newNutexb)
+
+        printAndWrite("Converting "+os.path.basename(targetFile))
+        
         #run program on it depending on if the text file ends in dds
         subcall = [imgnutexbLocation,"-n "+split_tup[0],targetFile,newNutexb]
         if (split_tup[1] == ".dds"):
