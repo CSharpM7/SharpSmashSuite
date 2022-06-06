@@ -260,6 +260,7 @@ def run():
             continue
         #ignore files we know do not exist
         if (t.startswith("$DNE_")):
+            printAndWrite(t + " has DNE tag; skipping")
             continue
 
         #find the desired new name
@@ -305,11 +306,13 @@ def run():
         
         #if file doesn't exist, skip
         if (not fileNameExists):
+            rewriteList=True
             textures[i] = "$DNE_" + t
             printAndWrite(t + " does not exist")
             continue
         #if it's not an image file, ignore it
         if (not ValidImage(targetFile)):
+            rewriteList=True
             textures[i] = "$DNE_" + t
             printAndWrite(os.path.basename(targetFile) + " is not an image file")
             continue
