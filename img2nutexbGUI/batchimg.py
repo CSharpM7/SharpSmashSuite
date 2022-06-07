@@ -61,16 +61,16 @@ def truncate(string,direciton=W,limit=20,ellipsis=True):
     return text
 
 #show message
-def message(type,string):
+def message(text,type=""):
     type = type.lower()
     #what do you mean match type is only for 3.10?!?
     if type=="error":
-        messagebox.showerror(root.title(),string)
+        messagebox.showerror(root.title(),text)
     elif type=="warning":
-        messagebox.showwarning(root.title(),string)
+        messagebox.showwarning(root.title(),text)
     else:
-        messagebox.showinfo(root.title(), string)
-    print(type+": "+string)
+        messagebox.showinfo(root.title(),text)
+    print(type+": "+text)
     
 #check to make sure that the program is a valid file
 def ValidExe():
@@ -82,7 +82,7 @@ def ValidExe():
             
 #if we don't have img2nutexb here, then ask for it!
 if (ValidExe() == False):
-    message("Warning","img2nutexb.exe not found, please select it")
+    message(type = "Warning",text = "img2nutexb.exe not found, please select it")
     ftypes = [    
         ('img2nutexb program', ["*.exe"])
     ]
@@ -91,7 +91,7 @@ if (ValidExe() == False):
     #if selected file is in valid, quit
     if (not ValidExe()):
         config.set("DEFAULT","img2nutexbLocation",defaultLocation)
-        message("ERROR","Selected file not valid")
+        message(type = "ERROR",text = "Selected file not valid")
         root.destroy()
         sys.exit("No img2nutexb.exe file")
 
@@ -103,7 +103,7 @@ if (ValidExe() == False):
 #blank nutexbFile
 blankFile = os.getcwd() + r"\blank.nutexb"
 if (not os.path.isfile(blankFile)):
-    message("ERROR","blank.nutexb is missing!")
+    message(type = "ERROR",text = "blank.nutexb is missing!")
     root.destroy()
     sys.exit("No blank nutexb")
 
@@ -221,7 +221,7 @@ def run():
     printAndWrite("")
     #run img for each file, assuming said file exists
     if (not HasValidSearch()):
-        message("ERROR","Search or Destination path invalid")
+        message(type = "ERROR",text = "Search or Destination path invalid")
         return
     
     #Replace the textureListFile contents with the contents of our GUI
@@ -352,7 +352,7 @@ def run():
         textureListFile.close()
         #Rewrite textureListFile
         with open('textureList.txt', 'a+') as textureListFile:
-            print("REWRITE")
+            print("Rewriting textureList.txt")
             for t in textures:
                 textureListFile.write(t)
                 textureListFile.write("\n")
@@ -362,7 +362,7 @@ def run():
 
     #root.withdraw()
     #sys.exit("success")
-    printAndWrite("Success!")
+    message("Finished!")
 
 #create run button
 run_btn = Button(searchFrame, text="Run", command=run,anchor=S)
