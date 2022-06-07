@@ -250,6 +250,8 @@ def run():
     rewriteList=False
     overwritePrompt=True
     overwriteFiles=True
+    useDDSPrompt=True
+    useDDSOption=True
     printAndWrite("Running...")
     #For each texture, see if we can run the program
     for i in range(len(textures)):
@@ -274,10 +276,9 @@ def run():
             if (overwritePrompt):
                 overwritePrompt = False
                 res = messagebox.askyesno(root.title(), "Some files already exists in the destination directory! Overwrite all files?",icon ='warning')
-                if res == False:
-                    overwriteFiles=False
-                    continue
-            elif (overwriteFiles == False):
+                overwriteFiles = res
+                
+            if (overwriteFiles == False):
                 printAndWrite(t + " exists and will not overwrite")
                 continue
             
@@ -324,15 +325,25 @@ def run():
         
         #run program on it depending on if the text file ends in dds
         subcall = [imgnutexbLocation,"-n "+split_tup[0],targetFile,newNutexb]
+        convertedDDS = ""
         if (split_tup[1] == ".dds"):
-            subcall.append("-d")
-            subcall.append("-u")
+            if (useDDSPrompt):
+                useDDSPrompt = False
+                res = messagebox.askyesno(root.title(), "Use img2nutexb DDS options for DDS Files? (Some failed dds conversions can be fixed by not using these options)",icon ='info')
+                useDDSOption = res
+            if (useDDSOption):
+                subcall.append("-d")
+                subcall.append("-u")
+                convertedDDS = " using dds options"
         #output any errors to a textfile
         with open('output.txt', 'a+') as stdout_file:
-            process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+            try:
+                process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+            except:
+                print(os.path.basename(newNutexb) + " can't be converted; might be open in another program")
             #print(process_output.__dict__)
                 
-        printAndWrite("Created "+os.path.basename(newNutexb))
+        printAndWrite("Created "+os.path.basename(newNutexb) + convertedDDS)
         
 
     #Only rewrite if necessary

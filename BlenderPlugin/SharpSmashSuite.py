@@ -16,7 +16,7 @@ bl_info = {
 
 #Used to print to Blender Console, as well as system window
 def console_print(*args, **kwargs):
-    return
+    #return
     for a in context.screen.areas:
         if a.type == 'CONSOLE':
             c = {}
@@ -182,7 +182,9 @@ class SharpSmashSuite_OT_list(Operator):
                     #find the texture file. If it's a pBSDF, we'll look for the BaseColor input
                     if psdf:
                         #for l in psdf.inputs[0].links:
-                        imageNode = psdf.inputs[0].links[0].from_node
+                        print(materialName)
+                        if (len(psdf.inputs[0].links) > 0):
+                            imageNode = psdf.inputs[0].links[0].from_node
                         
                     
                     #get the filepath to that image
