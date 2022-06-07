@@ -252,6 +252,8 @@ def run():
     overwriteFiles=True
     useDDSPrompt=True
     useDDSOption=True
+    renamePrompt=True
+    rename=True
     printAndWrite("Running...")
     #For each texture, see if we can run the program
     for i in range(len(textures)):
@@ -268,15 +270,21 @@ def run():
         #find the desired new name
         split_tup = os.path.splitext(t)
         newNutexb = root.destDir + "/" +split_tup[0]+".nutexb"
+
         #replace nrm with nor
-        newNutexb = newNutexb.replace("_nrm.nutexb","_nor.nutexb")
+        if (newNutexb.find("_nrm.")>-1 or newNutexb.find("_dif.")>-1):
+            if (renamePrompt):
+                renamePrompt = False
+                rename = messagebox.askyesno(root.title(), "Rename _dif and _nrm suffixes to Ultimate's _col and _nor?",icon ='info')
+            if (rename):
+                newNutexb = newNutexb.replace("_dif.nutexb","_col.nutexb")
+                newNutexb = newNutexb.replace("_nrm.nutexb","_nor.nutexb")
         
         #if we find a file that already exists, ask to overwrite
         if (os.path.isfile(newNutexb)):
             if (overwritePrompt):
                 overwritePrompt = False
-                res = messagebox.askyesno(root.title(), "Some files already exists in the destination directory! Overwrite all files?",icon ='warning')
-                overwriteFiles = res
+                overwriteFiles = messagebox.askyesno(root.title(), "Some files already exists in the destination directory! Overwrite all files?",icon ='warning')
                 
             if (overwriteFiles == False):
                 printAndWrite(t + " exists and will not overwrite")
@@ -329,8 +337,7 @@ def run():
         if (split_tup[1] == ".dds"):
             if (useDDSPrompt):
                 useDDSPrompt = False
-                res = messagebox.askyesno(root.title(), "Use img2nutexb DDS options for DDS Files? (Some failed dds conversions can be fixed by not using these options)",icon ='info')
-                useDDSOption = res
+                useDDSOption = messagebox.askyesno(root.title(), "Use img2nutexb DDS options for DDS Files? (Some failed dds conversions can be fixed by not using these options)",icon ='info')
             if (useDDSOption):
                 subcall.append("-d")
                 subcall.append("-u")
