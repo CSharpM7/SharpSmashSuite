@@ -270,6 +270,7 @@ def run():
         #find the desired new name
         split_tup = os.path.splitext(t)
         newNutexb = root.destDir + "/" +split_tup[0]+".nutexb"
+        newNutexb = newNutexb.lower()
 
         #replace nrm with nor
         if (newNutexb.find("_nrm.")>-1 or newNutexb.find("_dif.")>-1):
