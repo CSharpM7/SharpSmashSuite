@@ -277,6 +277,13 @@ def ImportCross():
     message("CrossMod presets saved as "+exportLocation)
 
 def ExportCross():
+    if IsEditingPreset():
+        res = messagebox.askyesno(root.title(), "You'll need to save the preset file before exporting. Save now?",icon ='warning')
+        if res == True:
+            SaveNumatb()
+        else:
+            return
+            
     xmlCreated = CreateXML()
     if (xmlCreated == False):
         return
@@ -322,9 +329,19 @@ def ExportCross():
     message("Preset Exported!")
 
 def OpenNumatb():
-    numatb = filedialog.askopenfilename(title = "Search",filetypes=root.filetypes)
+    OpenFile(filedialog.askopenfilename(title = "Search",filetypes=root.filetypes))
+
+def OpenPreset():
+    if IsEditingPreset():
+        OpenFile(config["DEFAULT"]["numatbLocation"])
+    else:
+        OpenFile(root.presetNumatb)
+
+def OpenFile(numatb):
     if (numatb == ""):
         return
+    if (not os.path.isfile(numatb)):
+        message(type="error",text="File "+numatb+" does not exist")
     try:
         root.matl = ssbh_data_py.matl_data.read_matl(numatb)
         RefreshGUI()
@@ -515,6 +532,7 @@ root.filemenu.add_command(label="Exit", command=quitOut)
 root.menubar.add_cascade(label="File", menu=root.filemenu)
 
 root.configmenu = Menu(root.menubar, tearoff=0)
+root.configmenu.add_command(label="Open Preset File", command=OpenPreset)
 root.configmenu.add_command(label="Set Preset Numatb", command=SetPreset)
 root.configmenu.add_command(label="Export Presets To LazyMat", command=ExportPreset)
 root.configmenu.add_command(label="Export Presets To CrossMod", command=ExportCross)
@@ -588,12 +606,16 @@ def IsEditingPreset():
 
 def UpdatePresetMenus():
     #Disable preset commands if you're editing the preset file!
-    hasPreset = "normal" if os.path.isfile(root.presetNumatb) else "disabled"
-    if (hasPreset=="normal"):
+    hasPreset = os.path.isfile(root.presetNumatb)
+    if (hasPreset==True):
         if IsEditingPreset():
-            hasPreset = "disabled"
-    menu_listMaterial.entryconfigure(0, state=hasPreset)
-    menu_listMaterial.entryconfigure(1, state=hasPreset)
+            hasPreset = False
+    hasPresetString = "normal" if hasPreset else "disabled"
+    menu_listMaterial.entryconfigure(0, state=hasPresetString)
+    menu_listMaterial.entryconfigure(1, state=hasPresetString)
+    root.configmenu.entryconfig(0, label="Open Preset File" if hasPreset else "Return To Working File")
+    root.configmenu.entryconfig(1, state=hasPresetString)
+
 
 def ChangeToPreset():
     root.deiconify()
@@ -667,6 +689,7 @@ def ChangeToPresetPopUp():
 def RemoveMaterial():
     selection = getSelectedMaterial()
     root.matl.entries.pop(selection)
+    ChangedNumatb()
     RefreshGUI()
 
 from typing import NewType
@@ -935,20 +958,6 @@ root.defaultTextures = {
 }
 def CreateTexture(param,oldmatl,newmatl):
     data = AssignDefaultParam(param,root.defaultTextures)
-    #textureID = [int(s) for s in re.findall(r"\d+",param.name)]
-    #textureID = textureID[0]
-    #print(textureID)
-    #wish python3.9 had switch case
-    #if textureID == 4:
-    #    data = "/common/shader/sfxPBS/default_Normal"
-    #if textureID == 5 or textureID ==  14: #EMI should be black, maybe gray?
-    #    data = "/common/shader/sfxPBS/default_Black"
-    #if textureID == 6:
-    #    data = "/common/shader/sfxPBS/default_Params"
-    #if textureID == 2 or textureID ==  7 or textureID ==  8:
-    #    data = "#replace_cubemap"
-    #if textureID == 9: #Baked lighting should be relatively dark
-    #    data = "/common/shader/sfxPBS/default_Gray"
     #See if we can preserve the texture
     for i in oldmatl.textures:
         if (str(i.param_id) == str(param)):
