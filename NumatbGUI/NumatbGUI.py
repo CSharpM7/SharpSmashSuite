@@ -342,6 +342,7 @@ def OpenFile(numatb):
         return
     if (not os.path.isfile(numatb)):
         message(type="error",text="File "+numatb+" does not exist")
+        return
     try:
         root.matl = ssbh_data_py.matl_data.read_matl(numatb)
         RefreshGUI()
