@@ -1,4 +1,4 @@
-<material name="SFX_PBS_00000000000c8100_sort" label="S_Default_Transparency">
+<material name="SFX_PBS_00000000010c8240_opaque" label="S_Default_Transparency">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
@@ -15,20 +15,20 @@
         <Unk12>0</Unk12>
       </blend_state>
     </param>
-    <param name="CustomVector27">
-      <vector4>
-        <X>1</X>
-        <Y>0</Y>
-        <Z>0</Z>
-        <W>0</W>
-      </vector4>
-    </param>
-    <param name="CustomVector3">
+    <param name="CustomVector13">
       <vector4>
         <X>1</X>
         <Y>1</Y>
         <Z>1</Z>
         <W>1</W>
+      </vector4>
+    </param>
+    <param name="CustomVector27">
+      <vector4>
+        <X>10</X>
+        <Y>0</Y>
+        <Z>0</Z>
+        <W>0</W>
       </vector4>
     </param>
     <param name="CustomVector8">
@@ -51,7 +51,7 @@
         <Unk8>0</Unk8>
       </rasterizer_state>
     </param>
-    <param name="Sampler5">
+    <param name="Sampler0">
       <sampler>
         <WrapS>MirroredRepeat</WrapS>
         <WrapT>Repeat</WrapT>
@@ -67,13 +67,13 @@
         </BorderColor>
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
-        <LodBias>0</LodBias>
+        <LodBias>0.5</LodBias>
         <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
-    <param name="Texture5">
+    <param name="Texture0">
       <string>
-        <Text>/common/shader/sfxPBS/default_Gray</Text>
+        <Text>ac_natureall00_col</Text>
       </string>
     </param>
   </material>
