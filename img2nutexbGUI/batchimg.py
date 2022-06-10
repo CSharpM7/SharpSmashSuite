@@ -123,6 +123,12 @@ def HasValidSearch():
 def HasValidDest():
     return os.path.isdir(root.destDir)
 
+def saveSearch():
+    #Replace the textureListFile contents with the contents of our GUI
+    textureListFile = open('textureList.txt','w+')
+    textureListFile.write(textureEntry.get("1.0","end-1c"))
+    textureListFile.close()
+    print("Updated search file")
 def setSearch():
     global desiredSearch
     root.searchDir = filedialog.askdirectory(title = "Search")
@@ -133,6 +139,14 @@ def setSearch():
     config.set("DEFAULT","searchDir",root.searchDir)
     with open('config.ini', 'w+') as configfile:
         config.write(configfile)
+        
+    #when choosing a new directory, remove DNE tags
+    newEntry = textureEntry.get("1.0","end-1c")
+    newEntry = newEntry.replace("$DNE_","")
+    textureEntry.delete("1.0","end")
+    textureEntry.insert("1.0",newEntry)
+    saveSearch()
+    
 def setDest():
     root.destDir = filedialog.askdirectory(title = "Destination")
     if (root.destDir != ""):
@@ -142,6 +156,7 @@ def setDest():
     config.set("DEFAULT","destDir",root.destDir)
     with open('config.ini', 'w+') as configfile:
         config.write(configfile)
+
 
 #GUI
 
@@ -224,10 +239,7 @@ def run():
         message(type = "ERROR",text = "Search or Destination path invalid")
         return
     
-    #Replace the textureListFile contents with the contents of our GUI
-    textureListFile = open('textureList.txt','w+')
-    textureListFile.write(textureEntry.get("1.0","end-1c"))
-    textureListFile.close()
+    saveSearch()
     #gather a list of textures to find
     textureListFile = open('textureList.txt','r')
     textures = textureListFile.readlines()
@@ -378,6 +390,7 @@ searchFrame.add(run_btn,pady=30)
 
 #on window closed
 def onClosed():
+    saveSearch()
     root.destroy()
     sys.exit("User exited")
     
