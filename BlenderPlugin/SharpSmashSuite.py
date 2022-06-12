@@ -416,9 +416,10 @@ class SharpSmashSuite_OT_addMap(Operator):
         for obj in bpy.context.selected_objects:
             if obj.data.uv_layers:
                 if (not obj.data.uv_layers.find(self.newname)):
-                    obj.data.uv_layers.new(name='bake1')
+                    obj.data.uv_layers.new(name=self.newname)
                 else:
                     report(self,{'WARNING'}, obj.name + " already has " + self.newname)
+                bpy.context.object.data.uv_layers[self.newname].active = True
             else:
                 report(self,{'WARNING'}, obj.name + " has no maps")
             
