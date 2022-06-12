@@ -361,6 +361,7 @@ def OpenFile(numatb):
     #read in data
 
     #now refresh GUI and whatnot
+    root.title(appName)
     RefreshGUI()
     UpdatePresetMenus()
 

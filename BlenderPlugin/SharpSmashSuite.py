@@ -109,7 +109,8 @@ class SharpSmashSuite_PanelObject(bpy.types.Panel):
         
         column = layout.column()
         column.operator("sharpsmashsuite.separate_operator", icon = "MATERIAL")
-        column.operator("sharpsmashsuite.map_operator", icon = "GROUP_UVS")
+        column.operator("sharpsmashsuite.renamemap_operator", icon = "GROUP_UVS")
+        column.operator("sharpsmashsuite.addmap_operator", icon = "UV")
         column.operator("sharpsmashsuite.join_operator", icon = "OUTLINER_OB_MESH")
         
 class SharpSmashSuite_PanelMisc(bpy.types.Panel):
@@ -387,7 +388,7 @@ def renameMaps():
     
 class SharpSmashSuite_OT_renameMaps(Operator):
     bl_label = "Rename Maps"
-    bl_idname = "sharpsmashsuite.map_operator"
+    bl_idname = "sharpsmashsuite.renamemap_operator"
     bl_description = """Renames UV Maps to map1, bake1, map(n); Color maps to colorset1,colorset(n).
     Used with Join Like Objects and Swap Materials to preserve UVs/Vertex Colors.
     Maps active in Render are assigned 1"""
@@ -400,6 +401,32 @@ class SharpSmashSuite_OT_renameMaps(Operator):
         renameMaps()
         report(self,{'INFO'}, "Maps renamed")
         return {'FINISHED'}    
+        
+class SharpSmashSuite_OT_addMap(Operator):
+    bl_label = "Add Map To Objects"
+    bl_idname = "sharpsmashsuite.addmap_operator"
+    bl_description = """Adds a map to all selected meshes"""
+        
+    newname: bpy.props.StringProperty(default = "bake1")
+    
+    def execute(self,context):
+        if (HasNoObjectsSelected(self)):
+            return {'FINISHED'}
+        
+        for obj in bpy.context.selected_objects:
+            if obj.data.uv_layers:
+                if (not obj.data.uv_layers.find(self.newname)):
+                    obj.data.uv_layers.new(name='bake1')
+                else:
+                    report(self,{'WARNING'}, obj.name + " already has " + self.newname)
+            else:
+                report(self,{'WARNING'}, obj.name + " has no maps")
+            
+        report(self,{'INFO'}, "Baked maps added")
+        return {'FINISHED'}
+        
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
 
 class SharpSmashSuite_MENU_join(bpy.types.Menu):
     bl_label = "Join Like Objects"
@@ -580,7 +607,7 @@ def draw_item(self, context):
     
 classes = [SharpSmashSuite_MainPanel,SharpSmashSuite_PanelRename,SharpSmashSuite_PanelObject,SharpSmashSuite_PanelMisc,
 SharpSmashSuite_OT_swap,SharpSmashSuite_OT_list,SharpSmashSuite_OT_separate,
-SharpSmashSuite_OT_vertex,SharpSmashSuite_OT_rename,SharpSmashSuite_OT_renameMaps,
+SharpSmashSuite_OT_vertex,SharpSmashSuite_OT_rename,SharpSmashSuite_OT_renameMaps,SharpSmashSuite_OT_addMap,
 SharpSmashSuite_OT_join,SharpSmashSuite_MENU_join,SharpSmashSuite_OT_join_confirm]
 def register():
     for cls in classes:

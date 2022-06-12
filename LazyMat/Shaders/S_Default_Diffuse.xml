@@ -76,7 +76,7 @@
     </param>
     <param name="Texture0">
       <string>
-        <Text>/common/shader/sfxPBS/default_Gray</Text>
+        <Text>/common/shader/sfxPBS/default_White</Text>
       </string>
     </param>
   </material>

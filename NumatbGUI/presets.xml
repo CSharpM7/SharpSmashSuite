@@ -1373,7 +1373,7 @@
       </string>
     </param>
   </material>
-  <material name="SFX_PBS_000000000109c240_far" label="S_Default_Diffuse">
+  <material name="SFX_PBS_000000000109c240_opaque" label="S_Default_Diffuse">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
@@ -1633,7 +1633,7 @@
       </string>
     </param>
   </material>
-  <material name="SFX_PBS_00000000000c8100_sort" label="S_Default_Transparency">
+  <material name="SFX_PBS_00000000000c8100_sort" label="S_Default_Transparent">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
@@ -1688,7 +1688,7 @@
     </param>
     <param name="Sampler5">
       <sampler>
-        <WrapS>MirroredRepeat</WrapS>
+        <WrapS>Repeat</WrapS>
         <WrapT>Repeat</WrapT>
         <WrapR>Repeat</WrapR>
         <MinFilter>LinearMipmapLinear</MinFilter>
