@@ -66,7 +66,8 @@ if (root.searchDir == ""):
     print("no search")
     setsearchDir()
 else:
-    res = messagebox.askquestion(root.title(), 'Use most recent search directory?')
+    basename = os.path.basename(root.searchDir)
+    res = messagebox.askquestion(root.title(), 'Use most recent search directory? ('+basename+')')
     if res == 'yes':
         print("using same search dir")
     elif res == 'no':
