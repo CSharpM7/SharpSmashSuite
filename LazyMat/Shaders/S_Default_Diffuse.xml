@@ -1,9 +1,9 @@
-<material name="SFX_PBS_000000000109c240_opaque" label="S_Default_Diffuse">
+<material name="SFX_PBS_0000000001048240_opaque" label="S_Default_Diffuse">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
         <Unk2>0</Unk2>
-        <DestinationColor>OneMinusSourceAlpha</DestinationColor>
+        <DestinationColor>Zero</DestinationColor>
         <Unk4>1</Unk4>
         <Unk5>0</Unk5>
         <Unk6>0</Unk6>
