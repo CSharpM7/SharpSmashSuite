@@ -1,7 +1,9 @@
-# LazyNumdlb
+# NumatbGUI
 
-This program edits the .numdlb file to make each mesh's material\_label value match that mesh's name. This also takes into account Blender exported models that typically suffix meshes with ".0n". As long as you don't have mesh.1xx, it should work.
+![window](https://i.imgur.com/JkXWyTt.png)
+
+This program edits the .numatb files. Think of it like CrossMod + Matlab, but with a user interface. It is cappable of creating a preset file to use on other models, as well as export to various programs like LazyMat and CrossMod
 
 ## Usage
 
-Place a numdlb file into the same directory as this program, then run the program. For your convenience, this also creates a copy of the old numdlb before making any changes.
+Please read the wiki [here](https://github.com/CSharpM7/SharpSmashSuite/wiki/NumatGUI)
