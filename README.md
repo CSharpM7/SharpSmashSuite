@@ -22,7 +22,7 @@ Grab from the latest [releases](https://github.com/CSharpM7/SharpSmashSuite/rele
 
 ### Modding compatibility
 
-<table><tbody><tr><td>&nbsp;</td><td>Stage Modding</td><td>Character Modding</td></tr><tr><td>Blender SSS</td><td><span>:heavy_check_mark:</span></td><td><span>:question:</span></td></tr><tr><td>LazyMat</td><td><span>:heavy_check_mark:</span></td><td><span>:question:</span></td></tr><tr><td>LazyConfig</td><td><span>:heavy_check_mark:</span></td><td><span>:x:</span></td></tr><tr><td>LazyNumdlb</td><td><span>:heavy_check_mark:</span></td><td><span>:question:</span></td></tr><tr><td>img2nutexbGUI</td><td><span>:heavy_check_mark:</span></td><td><span>:heavy_check_mark:</span></td></tr></tbody></table>
+<table><tbody><tr><td>&nbsp;</td><td>Stage Modding</td><td>Character Modding</td></tr><tr><td>Blender SSS</td><td><span>:heavy_check_mark:</span></td><td><span>:question:</span></td></tr><tr><td>LazyMat</td><td><span>:heavy_check_mark:</span></td><td><span>:question:</span></td></tr><tr><td>LazyConfig</td><td><span>:heavy_check_mark:</span></td><td><span>:x:</span></td></tr><tr><td>LazyNumdlb</td><td><span>:heavy_check_mark:</span></td><td><span>:question:</span></td></tr><tr><td>img2nutexbGUI</td><td><span>:heavy_check_mark:</span></td><td><span>:heavy_check_mark:</span></td></tr></tbody><td>NumatbGUI</td><td><span>:heavy_check_mark:</span></td><td><span>:heavy_check_mark:</span></td></tr></tbody></table>
 
 ## Getting Started
 
