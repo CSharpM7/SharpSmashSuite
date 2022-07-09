@@ -392,6 +392,9 @@ def SaveNumatb(backUp=True):
     root.matl.save(root.numatb)
     root.title(appName)
     SetStatus("Saved to "+os.path.basename(root.numatb))
+    #Update preset if editted
+    if (IsEditingPreset()):  
+        root.preset = ssbh_data_py.matl_data.read_matl(root.numatb)
     UpdatePresetMenus()
 
 def ChangedNumatb():
@@ -515,6 +518,79 @@ def RefreshGUI_Info():
     ]
     ReadAllParams(params)
 
+def PresetAll():
+    root.deiconify()
+    #make sure a material AND a preset are selected
+    p = root.list_Presets.curselection()
+    root.popup.destroy()
+    if (len(p)==0):
+        return
+    presetSelection = p[0]
+
+    for s in range(len(root.matl.entries)):
+
+        #record the original material and its name (used for the message popup and renaming)
+        original = root.matl.entries[s]
+        oldName = original.material_label
+
+        #record our preset data
+        preset = root.preset.entries[presetSelection]
+        newName = preset.material_label
+
+        #make a copy
+        presetClone = SSBHCopy(preset)
+
+        mainTexture = None
+        #preserve textures...should I just make this a function?
+        for t in presetClone.textures:
+            for u in original.textures:    
+                textureID = [int(s) for s in re.findall(r"\d+",str(u.param_id))]
+                textureID = int(textureID[0])
+                if ((textureID == 0 or textureID == 5) and mainTexture == None):
+                    mainTexture = u.data
+                if (str(u.param_id) == str(t.param_id)):
+                    t.data = ""+u.data
+                    break
+
+        for t in presetClone.textures:
+            textureID = [int(s) for s in re.findall(r"\d+",str(t.param_id))]
+            textureID = textureID[0]
+            if (textureID == 0 or textureID == 5):
+                t.data = mainTexture
+
+        #place the copy where the old material is, and then remove the old material
+        root.matl.entries.insert(s,presetClone)
+        root.matl.entries[s].material_label = oldName
+        root.matl.entries.pop(s+1)
+        print(oldName)
+
+    #RefreshGUI(selection)
+    RefreshGUI_Info()
+    message("All materials are now using "+newName+"'s shader")
+    ChangedNumatb()
+
+def PresetAllPopUp():
+    root.popup = Toplevel()
+    root.popup.title("Change All To Preset")
+
+    root.list_Presets = Listbox(root.popup,
+                      height = 10, 
+                      width = 50, 
+                      #bg = "grey",
+                      activestyle = 'dotbox', 
+                      font = "Helvetica",
+                      fg = "black",
+                      exportselection=False
+                      )
+    root.list_Presets.pack()
+    for i in range(len(root.preset.entries)):
+        preset = root.preset.entries[i]
+        root.list_Presets.insert(i, preset.material_label)
+
+    button = Button(root.popup, text="Change", command=PresetAll).pack()
+    root.popup.protocol("WM_DELETE_WINDOW", onClosedPopup)
+    root.withdraw();
+
 #GUI  
 def donothing():
    x = 0
@@ -539,6 +615,7 @@ root.configmenu.add_command(label="Set Preset Numatb", command=SetPreset)
 root.configmenu.add_command(label="Export Presets To LazyMat", command=ExportPreset)
 root.configmenu.add_command(label="Export Presets To CrossMod", command=ExportCross)
 #root.configmenu.add_command(label="Import Presets From CrossMod", command=ImportCross)
+root.configmenu.add_command(label="Assign Preset To All Materials", command=PresetAllPopUp)
 root.menubar.add_cascade(label="Presets", menu=root.configmenu)
 
 def OpenWiki():
@@ -642,13 +719,15 @@ def ChangeToPreset():
     #make a copy
     presetClone = SSBHCopy(preset)
 
+    firstText = ""
     #preserve textures...should I just make this a function?
     for t in presetClone.textures:
         for u in original.textures:
-            #print(str(u.param_id) + "/"+str)
+            print(u.param_id)
             if (str(u.param_id) == str(t.param_id)):
                 t.data = ""+u.data
                 break
+    presetClone.textures[0].data = firstText
 
     #place the copy where the old material is, and then remove the old material
     root.matl.entries.insert(selection,presetClone)
@@ -665,6 +744,9 @@ def ChangeToPresetPopUp():
     root.popup = Toplevel()
     selection = getSelectedMaterial()
     if (selection <0):
+        root.deiconify()
+        root.popup.destroy()
+        message(type = "warning", text = "Please select a material first!")
         return
 
     entry = root.matl.entries[selection]
@@ -672,7 +754,7 @@ def ChangeToPresetPopUp():
 
     root.list_Presets = Listbox(root.popup,
                       height = 10, 
-                      width = 15, 
+                      width = 50, 
                       #bg = "grey",
                       activestyle = 'dotbox', 
                       font = "Helvetica",
