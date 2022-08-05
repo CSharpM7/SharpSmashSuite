@@ -29,6 +29,8 @@ root = Tk()
 root.title("Lazy Config")
 root.withdraw()
 
+root.modType = "stage"
+
 #open folder dialogue
 def setsearchDir():
     messagebox.showinfo(root.title(),"Select your mod's main folder")
@@ -47,17 +49,22 @@ def IsValidSearch():
     root.searchDirName = os.path.basename(root.searchDir)
     if (root.searchDirName == "stage"):
         return True
+    elif (root.searchDirName == "fighter"):
+        root.modType = "fighter"
+        return True
     else:
         subfolders = [f.path for f in os.scandir(root.searchDir) if f.is_dir()]
         for dirname in list(subfolders):
             if (os.path.basename(dirname) == "stage"):
+                return True
+            elif (os.path.basename(dirname) == "fighter"):
+                root.modType = "fighter"
                 return True
     return False
         
 
 #Set Search Dir
 root.searchDir = config["DEFAULT"]["searchDir"]
-root.stageDir = ""
 if (not os.path.isdir(root.searchDir)):
     root.searchDir = ""
     
@@ -66,15 +73,18 @@ if (root.searchDir == ""):
     print("no search")
     setsearchDir()
 else:
-    basename = os.path.basename(root.searchDir)
-    res = messagebox.askquestion(root.title(), 'Use most recent search directory? ('+basename+')')
-    if res == 'yes':
-        print("using same search dir")
-    elif res == 'no':
-        setsearchDir()
+    if (IsValidSearch()):
+        basename = os.path.basename(root.searchDir)
+        res = messagebox.askquestion(root.title(), 'Use most recent search directory? ('+basename+')')
+        if res == 'yes':
+            print("using same search dir")
+        elif res == 'no':
+            setsearchDir()
+        else:
+            root.destroy()
+            sys.exit("exited prompt")
     else:
-        root.destroy()
-        sys.exit("exited prompt")
+        setsearchDir()
 
 #write new location to config file      
 config.set("DEFAULT","searchDir",root.searchDir)
@@ -90,12 +100,17 @@ addFiles = data["new-dir-files"]
 #recursively scan subfolders to find "model" folders
 def scanSubFolders(dir,modelFolders):
     folderName = os.path.basename(dir)
-    if (folderName == "model"):
+    if (folderName == "model" and root.modType == "stage"):
         modelFolders.append(dir)
         
     subfolders = [f.path for f in os.scandir(dir) if f.is_dir()]
     for dirname in list(subfolders):
         subfolders.extend(scanSubFolders(dirname,modelFolders))
+        #for fighters, check every body/alt folder
+        if (folderName == "model" and root.modType == "fighter"):
+            fighterFolders = [m.path for m in os.scandir(dir) if m.is_dir()]
+            for fname in list(fighterFolders):
+                modelFolders.append(fname)
     return subfolders,modelFolders
 
 #start of recursion, this will only begin recursive search if the directory name is a whitelist,
@@ -124,25 +139,68 @@ if (len(modelFolders)==0):
     messagebox.showinfo(root.title(),"Nothing to add to config.json")
     root.destroy()
     sys.exit("Nothing came of scan")
-#trims a file/folder name to stage/*
+#trims a file/folder name to [stage or fighter]/*
 def trimName(file):
     print(file)
-    prefix = (file.find('stage\\'))
-    newName = file[prefix:len(file)]
-    newName = newName.replace("\\","/")
-    return newName
+    prefix = (file.find(root.modType+'\\'))
+    trimmedName = file[prefix:len(file)]
+    trimmedName = trimmedName.replace("\\","/")
+    return trimmedName
+
+root.currentSlot = ""
+root.canClone = False
 
 #for each model folder, gather the folders
 for folder in modelFolders:
     models = [f.path for f in os.scandir(folder) if f.is_dir()]
     for m in models:
         #for each model, trim down its name and add trimmed name to json
-        newName = trimName(m)
-        addFiles[newName] = []
+        trimmedName = trimName(m)
+        entryName = trimmedName
+
+        #fighters have different entryNames
+        if (root.modType == "fighter"):
+            fighterNameR = trimmedName.find("/model")
+            fighterName = (trimmedName[0:fighterNameR]).replace("fighter/","")
+            fighterSlot = trimmedName[len(trimmedName)-4:len(trimmedName)]
+            entryName = "fighter/" + fighterName + fighterSlot 
+            if (root.currentSlot == ""):
+                root.currentSlot = fighterSlot
+                root.canClone = True
+            elif (root.currentSlot != fighterSlot):
+                root.canClone = False
+
+        #if entryName doesn't already exist, add it
+        if (not entryName in addFiles):
+            addFiles[entryName] = []
+
         #comb through each file that ends in nutexb or nuanmb
         for file in os.listdir(m):
             if file.endswith(".nutexb") or file.endswith(".nuanmb"):
-                addFiles[newName].append(newName + r"/" + file)
+                addFiles[entryName].append(trimmedName + r"/" + file)
+
+#I really should put this in it's own function but I'm too lazy
+if (root.canClone):
+    res = messagebox.askquestion(root.title(), 'Make copies of '+root.currentSlot+' config data across c00-c07?')
+    if res == 'yes':
+        currentSlotAsInt = int(root.currentSlot[3:4])
+        originalFiles = addFiles.copy()
+        #clone
+        for i in range(8):
+            if (i == currentSlotAsInt):
+                continue
+            currentKey = list(originalFiles)[0]
+            newKey = currentKey.replace(root.currentSlot,"/c0"+str(i))
+            print(newKey)
+            addFiles[newKey] = []
+            for value in originalFiles.get(currentKey):
+                newValue = value.replace(root.currentSlot,"/c0"+str(i))
+                addFiles[newKey].append(newValue)
+                print(newValue)
+            #originalFiles[]
+
+
+
 
 #create configJson file
 writeLocation = root.searchDir + '/config.json'

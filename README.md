@@ -22,7 +22,15 @@ Grab from the latest [releases](https://github.com/CSharpM7/SharpSmashSuite/rele
 
 ### Modding compatibility
 
-<table><tbody><tr><td>&nbsp;</td><td>Stage Modding</td><td>Character Modding</td></tr><tr><td>Blender SSS</td><td><span>:heavy_check_mark:</span></td><td><span>:question:</span></td></tr><tr><td>LazyMat</td><td><span>:heavy_check_mark:</span></td><td><span>:question:</span></td></tr><tr><td>LazyConfig</td><td><span>:heavy_check_mark:</span></td><td><span>:x:</span></td></tr><tr><td>LazyNumdlb</td><td><span>:heavy_check_mark:</span></td><td><span>:question:</span></td></tr><tr><td>img2nutexbGUI</td><td><span>:heavy_check_mark:</span></td><td><span>:heavy_check_mark:</span></td></tr></tbody><td>NumatbGUI</td><td><span>:heavy_check_mark:</span></td><td><span>:heavy_check_mark:</span></td></tr></tbody></table>
+| | Stage Modding | Character Modding |
+| :---:| :----:| :----:|
+| Blender SSS | :heavy_check_mark: | :question: |
+| LazyMat | :heavy_check_mark: | :question: |
+| LazyConfig | :heavy_check_mark: | :heavy_check_mark: |
+| LazyNumdlb | :heavy_check_mark: | :question: |
+| img2nutexbGUI | :heavy_check_mark: | :heavy_check_mark: |
+| NumatbGUI | :heavy_check_mark: | :heavy_check_mark: |
+| UI Retrieve | :heavy_check_mark: | :x: |
 
 ## Getting Started
 

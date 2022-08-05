@@ -155,8 +155,8 @@ def callback():
         par = os.path.abspath(os.path.join(file, os.pardir))
         #get parent directory of file. For each destination, if the basename is the same...
         for d in destinationFolders:
-            print(os.path.basename(par) + "-"+os.path.basename(d))
             if os.path.basename(par) == os.path.basename(d):
+                print(os.path.basename(par))
                 #copy ui to destination
                 shutil.copy(file,d+r"/"+os.path.basename(file))
                 break
