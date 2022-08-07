@@ -93,8 +93,17 @@ with open('config.ini', 'w+') as configfile:
 
 #create dataTree for json
 data = {}
+data["new-dir-infos"] = []
+data["new-dir-infos-base"] = []
 data["new-dir-files"] = {}
 addFiles = data["new-dir-files"]
+addFolders = data["new-dir-infos"]
+root.folderAddition=False
+
+def UseFolderAddition(folderkey):
+    root.folderAddition=True
+    if (not folderkey in addFolders):
+        addFolders.append(folderkey)
 
 
 #recursively scan subfolders to find "model" folders
@@ -157,6 +166,7 @@ for folder in modelFolders:
         #for each model, trim down its name and add trimmed name to json
         trimmedName = trimName(m)
         entryName = trimmedName
+        fighterSlot = 0
 
         #fighters have different entryNames
         if (root.modType == "fighter"):
@@ -176,7 +186,15 @@ for folder in modelFolders:
 
         #comb through each file that ends in nutexb or nuanmb
         for file in os.listdir(m):
-            if file.endswith(".nutexb") or file.endswith(".nuanmb"):
+            includeFile=file.endswith(".nutexb") or file.endswith(".nuanmb");
+            #For Fighters, if the slot is greater than 7, then include EVERYthing
+            if (root.modType == "fighter"):
+                fighterSlotAsInt = int(fighterSlot[3:4]) 
+                if (fighterSlotAsInt>=8):
+                    UseFolderAddition(entryName)
+                    includeFile = True
+                    
+            if includeFile:
                 addFiles[entryName].append(trimmedName + r"/" + file)
 
 #I really should put this in it's own function but I'm too lazy
@@ -199,8 +217,12 @@ if (root.canClone):
                 print(newValue)
             #originalFiles[]
 
-
-
+#remove folderAddition if not used
+if (not root.folderAddition):
+    del data["new-dir-infos"]
+    del data["new-dir-infos-base"]
+else:
+    messagebox.showwarning(root.title(),"Folder addition was used for "+entryName+", you will need to manually add sound files and infobase files")
 
 #create configJson file
 writeLocation = root.searchDir + '/config.json'
