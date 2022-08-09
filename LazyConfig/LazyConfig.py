@@ -48,6 +48,7 @@ def setsearchDir():
 def IsValidSearch():
     root.searchDirName = os.path.basename(root.searchDir)
     if (root.searchDirName == "stage"):
+        root.modType = "stage"
         return True
     elif (root.searchDirName == "fighter"):
         root.modType = "fighter"
@@ -56,6 +57,7 @@ def IsValidSearch():
         subfolders = [f.path for f in os.scandir(root.searchDir) if f.is_dir()]
         for dirname in list(subfolders):
             if (os.path.basename(dirname) == "stage"):
+                root.modType = "stage"
                 return True
             elif (os.path.basename(dirname) == "fighter"):
                 root.modType = "fighter"
@@ -80,6 +82,7 @@ else:
             print("using same search dir")
         elif res == 'no':
             setsearchDir()
+            print("new search directory")
         else:
             root.destroy()
             sys.exit("exited prompt")
@@ -90,6 +93,8 @@ else:
 config.set("DEFAULT","searchDir",root.searchDir)
 with open('config.ini', 'w+') as configfile:
         config.write(configfile)
+
+print("Mod type: "+root.modType)
 
 #create dataTree for json
 data = {}
@@ -140,6 +145,7 @@ def scanSubFoldersStart(dir,modelFolders):
         for w in list(whitelist):
             if (os.path.basename(dirname).lower() == w.lower()):
                 subfolders.extend(scanSubFolders(dirname,modelFolders))
+
     return subfolders,modelFolders
 
 
@@ -149,6 +155,7 @@ if (len(modelFolders)==0):
     root.destroy()
     sys.exit("Nothing came of scan")
 #trims a file/folder name to [stage or fighter]/*
+
 def trimName(file):
     print(file)
     prefix = (file.find(root.modType+'\\'))
