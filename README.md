@@ -19,6 +19,7 @@ Python 3.9+
 ## Installation
 
 Grab from the latest [releases](https://github.com/CSharpM7/SharpSmashSuite/releases)
+
 The following applications are updated in the github repo, but not added to a current release. Please download from the source code via Code > Download ZIP.
 - LazyConfig: Now works for fighters
 - NumatbGUI: Lets you edit numatb files and save preset materials. This was to replace what CrossMod couldn't do, but now ssbh_editor has these features
