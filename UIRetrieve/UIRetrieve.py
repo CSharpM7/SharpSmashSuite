@@ -153,6 +153,13 @@ def getUI(quitOnFail=False):
         for d in destinationFolders:
             if os.path.basename(par) == os.path.basename(d):
                 print(os.path.basename(par))
+                #ask to copy if it exists
+                if (os.path.exists(d+r"/"+os.path.basename(file))):
+                    res = messagebox.askyesno(root.title(), "Overwrite "+os.path.basename(file)+"?",icon ='warning')
+                    if res != True:
+                        print("skip "+os.path.basename(file))
+                        continue
+
                 #copy ui to destination
                 shutil.copy(file,d+r"/"+os.path.basename(file))
                 break
@@ -182,6 +189,9 @@ for dirname in list(subfolders):
     if (os.path.basename(dirname) == "stage"):
         stagesubfolder = [s.path for s in os.scandir(dirname) if s.is_dir()]
         root.stageName = os.path.basename(stagesubfolder[0])
+        if (root.stageName == "common" and len(stagesubfolder)>1):
+            print("skip common")
+            root.stageName = os.path.basename(stagesubfolder[1])
 
 print (root.stageName )
 if (root.stageName!=""):
