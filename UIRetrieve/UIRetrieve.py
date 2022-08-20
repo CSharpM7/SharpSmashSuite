@@ -120,22 +120,18 @@ def getUIDump(target):
 
     return uiArray,isDLC
 
-def callback():
-    root.stageName = root.e.get()
-    root.withdraw()
-    print (root.stageName )
-    if (root.stageName==""):
-        root.destroy()
-        sys.exit("no input")
 
-
+def getUI(quitOnFail=False):
     #Get source UI
     uiArray=[]
     uiArray,isDLC = getUIDump(root.stageName)
     if (len(uiArray)==0):
-        messagebox.showinfo(root.title(),"Could not fine UI for that stage")
-        root.destroy()
-        sys.exit("no ui found")
+        if (quitOnFail==False):
+            return
+        else:
+            messagebox.showinfo(root.title(),"Could not find UI for that stage")
+            root.destroy()
+            sys.exit("no ui found")
 
     folderBase = "replace"
     folderDLC = "replace_patch"
@@ -161,7 +157,7 @@ def callback():
                 shutil.copy(file,d+r"/"+os.path.basename(file))
                 break
 
-    messagebox.showinfo(root.title(),"UI Retrieved!")
+    messagebox.showinfo(root.title(),"UI Retrieved for "+root.stageName+"!")
     #open folder
     import webbrowser
     webbrowser.open(desitnationParent)
@@ -170,17 +166,36 @@ def callback():
     root.destroy()
     sys.exit("success!")
 
-root.deiconify()
-root.title("UI Retrieve")
+def manualUI():
+    root.stageName = root.e.get()
+    root.withdraw()
+    print (root.stageName )
+    if (root.stageName==None or root.stageName == ""):
+        root.destroy()
+        sys.exit("no input")
+    getUI(True)
+
+
 root.stageName = ""
+subfolders = [f.path for f in os.scandir(root.destinationDir) if f.is_dir()]
+for dirname in list(subfolders):
+    if (os.path.basename(dirname) == "stage"):
+        stagesubfolder = [s.path for s in os.scandir(dirname) if s.is_dir()]
+        root.stageName = os.path.basename(stagesubfolder[0])
+
+print (root.stageName )
+if (root.stageName!=""):
+    getUI()
+
+#Create UI for manually if no stage/fighter name was found
+messagebox.showinfo(root.title(),"Could not find stage associated with this mod, please type in the stage name manually on the next window")
+root.deiconify()
 root.label = Label(root, text="Type in the name of the stage you want to search (ie battlefield_s)", anchor=N)
 root.label.pack(side = TOP)
 root.e = Entry(root,width =50)
 root.e.pack()
-
 root.e.focus_set()
-
-b = Button(root, text = "OK", width = 10, command = callback)
+b = Button(root, text = "OK", width = 10, command = manualUI)
 b.pack()
 
 mainloop()
