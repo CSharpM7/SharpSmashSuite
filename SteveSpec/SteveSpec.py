@@ -1,4 +1,5 @@
 import os
+from os import listdir
 import os.path
 import json
 from tkinter import *
@@ -11,6 +12,7 @@ import glob
 import sys
 import webbrowser
 import xml.etree.ElementTree as ET
+import yaml
 
 import configparser
 config = configparser.ConfigParser()
@@ -35,6 +37,7 @@ config.read('config.ini')
 #create ui for program
 root = Tk()
 root.title("Steve Spec")
+#root.iconbitmap(os.getcwd() +"/icon.ico")
 root.withdraw()
 
 root.arcDir = config["DEFAULT"]["arcDir"]
@@ -61,7 +64,7 @@ def IsValidArc():
     #Is this the directory with ArcExplorer.exe?
     if (os.path.exists(root.arcDir + r"/ArcExplorer.exe")):
         #Has stageParams been extracted?
-        if (os.path.exists(root.arcDir + r"/export" + root.stageParamsFolderShortcut + r"groundconfig.prc")):
+        if (os.path.exists(root.arcDir + r"/export" + root.stageParamsFolderShortcut + "groundconfig.prc")):
             return True
         else:
             messagebox.showerror(root.title(),"Please extra the folder stage/common/shared/param")
@@ -83,6 +86,8 @@ def SetStageParams():
         sys.exit("Invalid Folder")
 
     root.stageParams = root.arcDir + r"/export"+ root.stageParamsFolderShortcut
+    #Copy em for our working file
+    shutil.copy(root.stageParams + "groundconfig.prc", os.getcwd()+"/groundconfig.prc")
 
 #make sure that it is a validated destination folder, otherwise quit
 def IsValidModFolder():
@@ -187,6 +192,16 @@ f.close()
 #root.TempGroundInfo = shutil.copy(defaultGroundInfo,os.getcwd() + r"\tempconfig.prcxml")
 print("")
 
+tree = None
+treeRoot = None
+root.steveSideName = "cell_minlen_side"
+root.steveTopName = "cell_minlen_top"
+root.steveBottomName = "cell_minlen_bottom"
+root.steveSideValue = 0
+root.steveTopValue = 0
+root.steveBottomValue = 0
+
+
 #Parse Steve data from main groundconfig file and place it in a temporary file
 with open(defaultGroundInfo, 'rb') as file:
     parser = ET.XMLParser(encoding ='utf-8')
@@ -209,18 +224,12 @@ with open(defaultGroundInfo, 'rb') as file:
             for child in type_tag:
                 childName = child.get("hash")
 
-                #if (childName == "cell_minilen_side"):
-                #    child.text = "175"
-                #elif (childName == "cell_minilen_top"):
-                #    child.text = "150"
-                #elif (childName == "cell_minilen_bottom"):
-                #    child.text = "150"
-        #add 11 and 12
-        #for child in item:
-            #print(child.tag)
-            #if (child.tag == "EnableAlphaSampleToCoverage"):
-            #    child.tag = "Unk7"
-
+                if (childName == "cell_minilen_side"):
+                    root.steveSideValue = float(child.text)
+                elif (childName == "cell_minilen_top"):
+                    root.steveTopValue = float(child.text)
+                elif (childName == "cell_minilen_bottom"):
+                    root.steveBottomValue = float(child.text)
     tree.write(root.TempGroundInfo)
 
 
@@ -233,6 +242,7 @@ def exportGroundInfoLazy():
 def exportGroundInfo():
     #Part one of parcel: patch the original file with our edited values
     targetLocation = root.modDir + root.stageParamsFolderShortcut
+    os.makedirs(targetLocation)
     tempPrc = os.getcwd() +"/temp.prc"
     sourcePrc = root.stageParams + "/groundconfig.prc"
     parcel = root.parcelDir + r"/parcel.exe"
@@ -241,137 +251,136 @@ def exportGroundInfo():
     with open('output.txt', 'a+') as stdout_file:
         process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
         print(process_output.__dict__)
+    print("Temp prc created!")
 
-    print("Prc patched!")
-    #Part two: run parcel with the original and the patch to receive a prcx
+    #Part two: patch our working folder, as well
+    workingPrc = os.getcwd() + "/groundconfig.prc"
+    subcall = [parcel,"patch",workingPrc,root.TempGroundInfo,workingPrc]
+    with open('output.txt', 'a+') as stdout_file:
+        process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+        print(process_output.__dict__)
 
-    subcall = [parcel,"diff",sourcePrc,tempPrc,targetLocation+"/groundconfig.prcx"]
+    print("Working prc patched!")
+    #Part three: run parcel with the original and the patch to receive a prcx
+
+    subcall = [parcel,"diff",sourcePrc,tempPrc,targetLocation+"groundconfig.prcx"]
     with open('output.txt', 'a+') as stdout_file:
         process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
         print(process_output.__dict__)
 
     print("Prcx created!")
-    #Part three: copy the temp prcxml to the destination
-    shutil.copy(root.TempGroundInfo,targetLocation + r"\groundconfig.prcxml")
+
+    #Part four: copy the temp prcxml to the destination
+    os.remove(tempPrc)
+    shutil.copy(root.TempGroundInfo,targetLocation + r"groundconfig.prcxml")
     messagebox.showinfo(root.title(),"Exported groundconfig info to "+root.stageName)
     webbrowser.open(targetLocation)
 
-exportGroundInfo()
-root.destroy()
-sys.exit("cool!")
+root.cameraLeftValue=190
+root.cameraRightValue=190
+root.cameraTopValue=145
+root.cameraBottomValue=-60
+root.blastLeftValue=190
+root.blastRightValue=190
+root.blastTopValue=145
+root.blastBottomValue=-60
+root.collisions=[]
+#find the yaml
+root.yamlDir = root.modDir + "/stage/"+root.stageName+"/normal/param/"
+print(root.yamlDir)
+if (not os.path.isdir(root.yamlDir)):
+    print("Needs yamlDir")
+else:
+    print(os.path.basename(root.yamlDir))
+
+paramfiles = [f for f in listdir(root.yamlDir) if os.path.exists(os.path.join(root.yamlDir, f))]
+root.yamlFile = ""
+root.yaml = {}
+for f in list(paramfiles):
+    extension = os.path.splitext(os.path.basename(f))[1]
+    if (extension == ".yaml"):
+        root.yamlFile = root.yamlDir + "/"+f
+        break
+print(root.yamlFile)
+with open(root.yamlFile, "r") as stream:
+    try:
+        root.yaml = yaml.safe_load(stream)
+    except yaml.YAMLError as exc:
+        print(exc)
+
+for i in root.yaml:
+    #print(i)
+    #Get Camera Info
+    if (i=="camera"):
+        root.cameraLeftValue = float(root.yaml[i][0]["left"])
+        root.cameraRightValue = float(root.yaml[i][0]["right"])
+        root.cameraTopValue = float(root.yaml[i][0]["top"])
+        root.cameraBottomValue = float(root.yaml[i][0]["bottom"])
+    #get boundary Info
+    elif (i=="blastzones"):
+        root.blastLeftValue = float(root.yaml[i][0]["left"])
+        root.blastRightValue = float(root.yaml[i][0]["right"])
+        root.blastTopValue = float(root.yaml[i][0]["top"])
+        root.blastBottomValue = float(root.yaml[i][0]["bottom"])
+    #get collision Info
+    elif (i=="collisions"):
+        for c in root.yaml[i]:
+            #print(c)
+            #print(c["verts"])
+            if (len(root.collisions)<5):
+                root.collisions.append(c["verts"])
+
+#exportGroundInfo()
+#root.destroy()
+#sys.exit("cool!")
 
 
-
-
-
-
-
-
-
-
-
-
-def combUIFolder(target,uiArray,folderUI):
-    ui_Folder = root.arcDir + r"/export/ui/" + folderUI + r"/stage"
-    #comb through each stage_N folder to find files
-    subfolders = [f.path for f in os.scandir(ui_Folder) if f.is_dir()]
-    for folder in list(subfolders):
-        targetName = folder+r"/"+os.path.basename(folder)+"_"+target+".bntx"
-        if (os.path.exists(targetName)):
-            uiArray.append(targetName)
-    return uiArray
-
-def getUIDump(target):
-    uiArray = []
-    isDLC = False
-
-    #comb through each stage_N folder to find files
-    uiArray = combUIFolder(target,uiArray,"replace")
-
-    if (len(uiArray)==0):
-        isDLC = True
-        uiArray = combUIFolder(target,uiArray,"replace_patch")
-
-    return uiArray,isDLC
-
-
-def getUI(quitOnFail=False):
-    #Get source UI
-    uiArray=[]
-    uiArray,isDLC = getUIDump(root.stageName)
-    if (len(uiArray)==0):
-        if (quitOnFail==False):
-            return
-        else:
-            messagebox.showinfo(root.title(),"Could not find UI for that stage")
-            root.destroy()
-            sys.exit("no ui found")
-
-    folderBase = "replace"
-    folderDLC = "replace_patch"
-    folderUI = folderDLC if isDLC else folderBase
-
-
-    destinationFolders = []
-    desitnationParent = root.modDir+r"/ui/"+folderUI+ r"/stage"
-    #Populate folders as necessary 
-    for i in range(0,5):
-        path = desitnationParent+r"/stage_"+str(i)
-        destinationFolders.append(path)
-        os.makedirs(path, exist_ok=True)
-
-    #for each file in the uiArray, copy it to the proper destinationFolder
-    for file in uiArray:
-        par = os.path.abspath(os.path.join(file, os.pardir))
-        #get parent directory of file. For each destination, if the basename is the same...
-        for d in destinationFolders:
-            if os.path.basename(par) == os.path.basename(d):
-                print(os.path.basename(par))
-                #copy ui to destination
-                shutil.copy(file,d+r"/"+os.path.basename(file))
-                break
-
-    messagebox.showinfo(root.title(),"UI Retrieved for "+root.stageName+"!")
-    #open folder
-    import webbrowser
-    webbrowser.open(desitnationParent)
-
-    #quit
-    root.destroy()
-    sys.exit("success!")
-
-def manualUI():
-    root.stageName = root.e.get()
-    root.withdraw()
-    print (root.stageName )
-    if (root.stageName==None or root.stageName == ""):
-        root.destroy()
-        sys.exit("no input")
-    getUI(True)
-
-
-root.stageName = ""
-subfolders = [f.path for f in os.scandir(root.modDir) if f.is_dir()]
-for dirname in list(subfolders):
-    if (os.path.basename(dirname) == "stage"):
-        stagesubfolder = [s.path for s in os.scandir(dirname) if s.is_dir()]
-        root.stageName = os.path.basename(stagesubfolder[0])
-
-print (root.stageName )
-if (root.stageName!=""):
-    getUI()
-
-#Create UI for manually if no stage/fighter name was found
-messagebox.showinfo(root.title(),"Could not find stage associated with this mod, please type in the stage name manually on the next window")
+root.geometry("720x512")
 root.deiconify()
-root.label = Label(root, text="Type in the name of the stage you want to search (ie battlefield_s)", anchor=N)
-root.label.pack(side = TOP)
-root.e = Entry(root,width =50)
-root.e.pack()
-root.e.focus_set()
-b = Button(root, text = "OK", width = 10, command = manualUI)
-b.pack()
+root.canvasWidth = 640
+root.canvasHeight = 480 #240
+my_canvas = Canvas(root,width=root.canvasWidth,height=root.canvasHeight,bg="white")
+my_canvas.pack(pady=20)
+root.steveArea = my_canvas.create_rectangle(-10,-10,-10,-10,fill = "green",tag="steve")
+root.cameraArea = my_canvas.create_rectangle(-10,-10,-10,-10,outline = "blue",tag="camera")
+root.blastArea = my_canvas.create_rectangle(-10,-10,-10,-10,outline = "red",tag = "blast")
 
-mainloop()
+def GetAdjustedCoordinates(x1=0,y1=0,x2=0,y2=0):
+    xC = root.canvasWidth/2
+    yC = root.canvasHeight/2
+    x1=x1+xC
+    y1=(-y1)+yC
+    x2=x2+xC
+    y2=(-y2)+yC
+    return x1,y1,x2,y2
 
-    
+def DrawSteveBlock():
+    xC = root.canvasWidth/2
+    yC = root.canvasHeight/2
+    x1 = root.cameraLeftValue+root.steveSideValue
+    x2 = root.cameraRightValue-root.steveSideValue
+    y1 = root.cameraTopValue-root.steveTopValue
+    y2 = root.cameraBottomValue+root.steveBottomValue
+    x1,y1,x2,y2 = GetAdjustedCoordinates(x1,y1,x2,y2)
+    my_canvas.coords(root.steveArea,x1,y1,x2,y2)
+def DrawBoundaries():
+    x1,y1,x2,y2 = GetAdjustedCoordinates(root.cameraLeftValue,root.cameraTopValue,root.cameraRightValue,root.cameraBottomValue)
+    my_canvas.coords(root.cameraArea,x1,y1,x2,y2)
+    x1,y1,x2,y2 = GetAdjustedCoordinates(root.blastLeftValue,root.blastTopValue,root.blastRightValue,root.blastBottomValue)
+    my_canvas.coords(root.blastArea,x1,y1,x2,y2)
+
+def DrawCollisions():
+    for c in root.collisions:
+        for vert in range(len(c)-1):
+            x1=float(c[vert]["x"])
+            y1=float(c[vert]["y"])
+            x2=float(c[vert+1]["x"])
+            y2=float(c[vert+1]["y"])
+            x1,y1,x2,y2 = GetAdjustedCoordinates(x1,y1,x2,y2)
+            my_canvas.create_line(x1,y1,x2,y2, fill = "black")
+
+print(root.blastRightValue)
+DrawSteveBlock()
+DrawBoundaries()
+DrawCollisions()
+root.mainloop()
