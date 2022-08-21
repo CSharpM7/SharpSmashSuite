@@ -1278,17 +1278,6 @@ def ChangeTexturePopUp():
         textureValue.pack(side = RIGHT, fill = BOTH,expand=1)
         root.popupTextures.append(textureValue)
 
-    #root.list_TextureNames = Text(root.fr_Textures,width=10)
-    #root.list_TextureNames.pack(side = LEFT, fill = BOTH,anchor=E)
-    #root.list_Textures = Text(root.fr_Textures)
-    #root.list_Textures.pack(side = RIGHT, fill = BOTH,expand=1)
-    #for i in range(len(entry.textures)):
-    #    texture = entry.textures[i]
-    #    root.list_TextureNames.insert(END, texture.param_id.name+'\n')
-    #    root.list_Textures.insert(END, texture.data+'\n')
-    #    print(texture.data+'\n')
-    #root.list_TextureNames.configure(state ='disabled')
-
     button = Button(root.popup, text="Change", command=ChangeTexture,width = 10).pack(side=BOTTOM)
     root.popup.protocol("WM_DELETE_WINDOW", onClosedPopup)
     root.withdraw();

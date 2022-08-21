@@ -20,8 +20,9 @@ defaultConfig = configparser.ConfigParser()
 defaultConfig['DEFAULT'] = {
     'parcelDir' : "",
     'arcDir' : "",
+    'yamlvd' : "",
     'stageParamsLocation' : "",
-    'modDir' : "",
+    'modDir' : ""
     }
 def CreateConfig():
     print("creating valid config")
@@ -45,7 +46,7 @@ root.stageParamsFolderShortcut = r"/stage/common/shared/param/"
 
 #make sure that it is a validated parcel folder, otherwise quit
 def IsValidParcel():
-    #Is this the directory with ArcExplorer.exe?
+    #Is this the directory with Parcel.exe?
     return (os.path.exists(root.parcelDir + r"/parcel.exe"))
 
 def SetParcel():
@@ -88,6 +89,20 @@ def SetStageParams():
     root.stageParams = root.arcDir + r"/export"+ root.stageParamsFolderShortcut
     #Copy em for our working file
     shutil.copy(root.stageParams + "groundconfig.prc", os.getcwd()+"/groundconfig.prc")
+
+def SetYamlvd():
+    messagebox.showinfo(root.title(),"Set Yamlvd directory")
+    root.yamlvd = filedialog.askdirectory(title = "Select your Yamlvd directory")
+    if (root.yamlvd == ""):
+        root.destroy()
+        sys.exit("Invalid folder")
+    root.yamlvd = root.yamlvd + r"/yamlvd.exe"
+    print(root.yamlvd)
+    if (os.path.exists(root.yamlvd) == False):
+        messagebox.showerror(root.title(),"Please select the root of your Yamlvd folder")
+        root.destroy()
+        sys.exit("Invalid Folder")
+
 
 #make sure that it is a validated destination folder, otherwise quit
 def IsValidModFolder():
@@ -132,6 +147,14 @@ if (root.stageParams == ""):
     print("no arc")
     SetStageParams()
 
+#Get or Set root.stageParams
+root.yamlvd = config["DEFAULT"]["yamlvd"]
+if (not os.path.exists(root.yamlvd)):
+    root.yamlvd = ""
+if (root.yamlvd == ""):
+    print("no yamlvd")
+    SetYamlvd()
+
 #Set Mod Dir
 root.modDir = config["DEFAULT"]["modDir"]
 if (not os.path.isdir(root.modDir)):
@@ -157,6 +180,7 @@ else:
 
 config.set("DEFAULT","parcelDir",root.parcelDir)
 config.set("DEFAULT","arcDir",root.arcDir)
+config.set("DEFAULT","yamlvd",root.yamlvd)
 config.set("DEFAULT","stageParamsLocation",root.stageParams)
 config.set("DEFAULT","modDir",root.modDir)
 with open('config.ini', 'w+') as configfile:
@@ -276,111 +300,223 @@ def exportGroundInfo():
     messagebox.showinfo(root.title(),"Exported groundconfig info to "+root.stageName)
     webbrowser.open(targetLocation)
 
-root.cameraLeftValue=190
+root.cameraLeftValue=-190
 root.cameraRightValue=190
 root.cameraTopValue=145
 root.cameraBottomValue=-60
-root.blastLeftValue=190
+root.blastLeftValue=-190
 root.blastRightValue=190
 root.blastTopValue=145
 root.blastBottomValue=-60
+root.stageRadius=80
 root.collisions=[]
-#find the yaml
-root.yamlDir = root.modDir + "/stage/"+root.stageName+"/normal/param/"
-print(root.yamlDir)
-if (not os.path.isdir(root.yamlDir)):
-    print("Needs yamlDir")
-else:
-    print(os.path.basename(root.yamlDir))
 
-paramfiles = [f for f in listdir(root.yamlDir) if os.path.exists(os.path.join(root.yamlDir, f))]
 root.yamlFile = ""
-root.yaml = {}
-for f in list(paramfiles):
-    extension = os.path.splitext(os.path.basename(f))[1]
-    if (extension == ".yaml"):
-        root.yamlFile = root.yamlDir + "/"+f
-        break
-print(root.yamlFile)
-with open(root.yamlFile, "r") as stream:
-    try:
-        root.yaml = yaml.safe_load(stream)
-    except yaml.YAMLError as exc:
-        print(exc)
+root.yamlDir = root.modDir + "/stage/"+root.stageName+"/normal/param/"
+root.popup = None
+root.popupOptions = {}
 
-for i in root.yaml:
-    #print(i)
-    #Get Camera Info
-    if (i=="camera"):
-        root.cameraLeftValue = float(root.yaml[i][0]["left"])
-        root.cameraRightValue = float(root.yaml[i][0]["right"])
-        root.cameraTopValue = float(root.yaml[i][0]["top"])
-        root.cameraBottomValue = float(root.yaml[i][0]["bottom"])
-    #get boundary Info
-    elif (i=="blastzones"):
-        root.blastLeftValue = float(root.yaml[i][0]["left"])
-        root.blastRightValue = float(root.yaml[i][0]["right"])
-        root.blastTopValue = float(root.yaml[i][0]["top"])
-        root.blastBottomValue = float(root.yaml[i][0]["bottom"])
-    #get collision Info
-    elif (i=="collisions"):
-        for c in root.yaml[i]:
-            #print(c)
-            #print(c["verts"])
-            if (len(root.collisions)<5):
-                root.collisions.append(c["verts"])
+def Merge(dict1, dict2):
+    res = {**dict1, **dict2}
+    return res
 
-#exportGroundInfo()
-#root.destroy()
-#sys.exit("cool!")
+import fileinput
+
+def FinishedCreateYaml():
+    #create yaml by copying our sample
+    root.yamlFile = root.yamlDir+"/"+root.stageName+".yaml"
+    shutil.copy(os.getcwd() + "/sample.yaml", root.yamlFile)
+
+    # Replace all tagged values
+    with open(root.yamlFile, 'r') as file :
+        filedata = file.read()
+
+    for option in root.popupOptions:
+        filedata = filedata.replace(option, root.popupOptions[option].get())
+
+    filedata = filedata.replace("RadiusL", "-"+root.popupOptions["StageRadius"].get())
+    filedata = filedata.replace("RadiusR", root.popupOptions["StageRadius"].get())
+
+    # Write to the copy
+    with open(root.yamlFile, 'w') as file:
+        file.write(filedata)
+
+    #Destroy popup, and return to main
+    root.popup.destroy()
+    Main()
+
+def CreateYaml():
+    if (not os.path.isdir(root.yamlDir)):   
+        messagebox.showinfo(root.title(),"Set directory to save yaml to")
+        root.yamlDir = filedialog.askdirectory(title = "Select your yaml directory")
+        if (root.yamlDir == ""):
+            root.destroy()
+            sys.exit("Invalid folder")
+
+    root.popup = Toplevel()
+    root.popup.title("Create Yaml")
+
+    label = Label(root.popup,text="Enter Values")
+    label.pack(fill = X,expand=1)
+
+    root.fr_Options = Frame(root.popup)
+    root.fr_Options.pack(fill = BOTH,expand=1,anchor=N)
+    root.popupOptions = {}
+    stageOptions = {"CameraLeft":root.cameraLeftValue,"CameraRight":root.cameraRightValue,
+    "CameraTop":root.cameraTopValue,"CameraBottom":root.cameraBottomValue,
+    "BlastLeft":root.blastLeftValue,"BlastRight":root.blastRightValue,
+    "BlastTop":root.blastTopValue,"BlastBottom":root.blastBottomValue,
+    "StageRadius":root.stageRadius}
+    for option in stageOptions:
+        optionData = stageOptions[option]
+        optionFrame = Frame(root.fr_Options)
+        optionFrame.pack(fill = X,expand=1)
+        optionName = Entry(optionFrame,width=15)
+        optionName.insert(0,option)
+        optionName.configure(state ='disabled')
+        optionName.pack(side = LEFT, fill = BOTH,anchor=E)
+        optionValue = Entry(optionFrame,width=15)
+        optionValue.insert(0,optionData)
+        optionValue.pack(side = RIGHT, fill = BOTH,expand=1)
+        root.popupOptions.update({option:optionValue})
+
+    button = Button(root.popup, text="Create Yaml", command=FinishedCreateYaml,width = 10).pack(side=BOTTOM)
+    root.popup.protocol("WM_DELETE_WINDOW", FinishedCreateYaml)
+    root.withdraw();
+
+def SetYaml():
+    #Attempt to find automatically first, if valid directory file exists
+    if (os.path.isdir(root.yamlDir)):
+        if (root.yamlFile == ""):
+            paramfiles = [f for f in listdir(root.yamlDir) if os.path.exists(os.path.join(root.yamlDir, f))]
+            root.yamlFile = ""
+            root.yaml = {}
+            for f in list(paramfiles):
+                extension = os.path.splitext(os.path.basename(f))[1]
+                if (extension == ".yaml"):
+                    root.yamlFile = root.yamlDir + "/"+f
+                    break
+    if (root.yamlFile == ""):
+        #SetYaml manually
+        messagebox.showinfo(root.title(),"Select your yaml or lvd file for your mod's stage")
+        filetypes = (
+            ('All File Types', '*.yaml *lvd'),
+            ('Yaml File', '*.yaml'),
+            ('LVD File', '*lvd')
+        )
+        desiredFile = filedialog.askopenfilename(title = "Search",filetypes=filetypes,initialdir = root.modDir)
+        if (desiredFile == ""):
+            #enter manually
+            messagebox.showwarning(root.title(),"Let's manually create a yaml file then!")
+            CreateYaml()
+            return
+        extension = os.path.splitext(os.path.basename(desiredFile))[1]
+        #If it's a yaml file, we did it!
+        if (extension == ".yaml"):
+            root.yamlFile = desiredFile
+        #else yamlvd it
+        elif (extension == ".lvd"):
+            print("yamlvd")
+            root.yamlFile = desiredFile.replace(".lvd",".yaml")
+            subcall = [root.yamlvd,desiredFile,root.yamlFile]
+            with open('output.txt', 'a+') as stdout_file:
+                process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+                print(process_output.__dict__)
+            if (not os.path.exists(root.yamlFile)):
+                #enter manually
+                messagebox.showwarning(root.title(),"Yamlvd not compatible with this stage! Let's create a yaml file!")
+                CreateYaml()
+                return
+    Main()
 
 
-root.geometry("720x512")
-root.deiconify()
-root.canvasWidth = 640
-root.canvasHeight = 480 #240
-my_canvas = Canvas(root,width=root.canvasWidth,height=root.canvasHeight,bg="white")
-my_canvas.pack(pady=20)
-root.steveArea = my_canvas.create_rectangle(-10,-10,-10,-10,fill = "green",tag="steve")
-root.cameraArea = my_canvas.create_rectangle(-10,-10,-10,-10,outline = "blue",tag="camera")
-root.blastArea = my_canvas.create_rectangle(-10,-10,-10,-10,outline = "red",tag = "blast")
+def Main():
+    print(root.yamlFile)
+    with open(root.yamlFile, "r") as stream:
+        try:
+            root.yaml = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
 
-def GetAdjustedCoordinates(x1=0,y1=0,x2=0,y2=0):
-    xC = root.canvasWidth/2
-    yC = root.canvasHeight/2
-    x1=x1+xC
-    y1=(-y1)+yC
-    x2=x2+xC
-    y2=(-y2)+yC
-    return x1,y1,x2,y2
+    for i in root.yaml:
+        #print(i)
+        #Get Camera Info
+        if (i=="camera"):
+            root.cameraLeftValue = float(root.yaml[i][0]["left"])
+            root.cameraRightValue = float(root.yaml[i][0]["right"])
+            root.cameraTopValue = float(root.yaml[i][0]["top"])
+            root.cameraBottomValue = float(root.yaml[i][0]["bottom"])
+        #get boundary Info
+        elif (i=="blastzones"):
+            print(root.yaml[i])
+            print(root.yaml[i][0])
+            root.blastLeftValue = float(root.yaml[i][0]["left"])
+            root.blastRightValue = float(root.yaml[i][0]["right"])
+            root.blastTopValue = float(root.yaml[i][0]["top"])
+            root.blastBottomValue = float(root.yaml[i][0]["bottom"])
+        #get collision Info
+        elif (i=="collisions"):
+            for c in root.yaml[i]:
+                #print(c)
+                #print(c["verts"])
+                if (len(root.collisions)<5):
+                    root.collisions.append(c["verts"])
 
-def DrawSteveBlock():
-    xC = root.canvasWidth/2
-    yC = root.canvasHeight/2
-    x1 = root.cameraLeftValue+root.steveSideValue
-    x2 = root.cameraRightValue-root.steveSideValue
-    y1 = root.cameraTopValue-root.steveTopValue
-    y2 = root.cameraBottomValue+root.steveBottomValue
-    x1,y1,x2,y2 = GetAdjustedCoordinates(x1,y1,x2,y2)
-    my_canvas.coords(root.steveArea,x1,y1,x2,y2)
-def DrawBoundaries():
-    x1,y1,x2,y2 = GetAdjustedCoordinates(root.cameraLeftValue,root.cameraTopValue,root.cameraRightValue,root.cameraBottomValue)
-    my_canvas.coords(root.cameraArea,x1,y1,x2,y2)
-    x1,y1,x2,y2 = GetAdjustedCoordinates(root.blastLeftValue,root.blastTopValue,root.blastRightValue,root.blastBottomValue)
-    my_canvas.coords(root.blastArea,x1,y1,x2,y2)
+    #exportGroundInfo()
+    #root.destroy()
+    #sys.exit("cool!")
 
-def DrawCollisions():
-    for c in root.collisions:
-        for vert in range(len(c)-1):
-            x1=float(c[vert]["x"])
-            y1=float(c[vert]["y"])
-            x2=float(c[vert+1]["x"])
-            y2=float(c[vert+1]["y"])
-            x1,y1,x2,y2 = GetAdjustedCoordinates(x1,y1,x2,y2)
-            my_canvas.create_line(x1,y1,x2,y2, fill = "black")
 
-print(root.blastRightValue)
-DrawSteveBlock()
-DrawBoundaries()
-DrawCollisions()
+    root.geometry("720x512")
+    root.deiconify()
+    root.canvasWidth = 640
+    root.canvasHeight = 480 #240
+    my_canvas = Canvas(root,width=root.canvasWidth,height=root.canvasHeight,bg="white")
+    my_canvas.pack(pady=20)
+    root.steveArea = my_canvas.create_rectangle(-10,-10,-10,-10,fill = "green",tag="steve")
+    root.cameraArea = my_canvas.create_rectangle(-10,-10,-10,-10,outline = "blue",tag="camera")
+    root.blastArea = my_canvas.create_rectangle(-10,-10,-10,-10,outline = "red",tag = "blast")
+
+    def GetAdjustedCoordinates(x1=0,y1=0,x2=0,y2=0):
+        xC = root.canvasWidth/2
+        yC = root.canvasHeight/2
+        x1=x1+xC
+        y1=(-y1)+yC
+        x2=x2+xC
+        y2=(-y2)+yC
+        return x1,y1,x2,y2
+
+    def DrawSteveBlock():
+        xC = root.canvasWidth/2
+        yC = root.canvasHeight/2
+        x1 = root.cameraLeftValue+root.steveSideValue
+        x2 = root.cameraRightValue-root.steveSideValue
+        y1 = root.cameraTopValue-root.steveTopValue
+        y2 = root.cameraBottomValue+root.steveBottomValue
+        x1,y1,x2,y2 = GetAdjustedCoordinates(x1,y1,x2,y2)
+        my_canvas.coords(root.steveArea,x1,y1,x2,y2)
+    def DrawBoundaries():
+        x1,y1,x2,y2 = GetAdjustedCoordinates(root.cameraLeftValue,root.cameraTopValue,root.cameraRightValue,root.cameraBottomValue)
+        my_canvas.coords(root.cameraArea,x1,y1,x2,y2)
+        x1,y1,x2,y2 = GetAdjustedCoordinates(root.blastLeftValue,root.blastTopValue,root.blastRightValue,root.blastBottomValue)
+        my_canvas.coords(root.blastArea,x1,y1,x2,y2)
+
+    def DrawCollisions():
+        for c in root.collisions:
+            for vert in range(len(c)-1):
+                x1=float(c[vert]["x"])
+                y1=float(c[vert]["y"])
+                x2=float(c[vert+1]["x"])
+                y2=float(c[vert+1]["y"])
+                x1,y1,x2,y2 = GetAdjustedCoordinates(x1,y1,x2,y2)
+                my_canvas.create_line(x1,y1,x2,y2, fill = "black")
+
+    print(root.blastRightValue)
+    DrawSteveBlock()
+    DrawBoundaries()
+    DrawCollisions()
+
+
+SetYaml()
+
 root.mainloop()
