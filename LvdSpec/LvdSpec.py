@@ -54,7 +54,7 @@ config.read('config.ini')
 root = Tk()
 root.programName="Steve Spec"
 root.title(root.programName)
-#root.iconbitmap(os.getcwd() +"/icon.ico")
+root.iconbitmap(os.getcwd() +"/icon.ico")
 root.withdraw()
 
 def UpdateTitle(newtitle=""):
@@ -327,7 +327,9 @@ def exportGroundInfoLazy():
 def exportGroundInfo():
     #Part one of parcel: patch the original file with our edited values
     targetLocation = root.modDir + root.stageParamsFolderShortcut
-    os.makedirs(targetLocation)
+    if (not os.path.exists(targetLocation)):
+        os.makedirs(targetLocation)
+
     tempPrc = os.getcwd() +"/temp.prc"
     sourcePrc = root.stageParams + "/groundconfig.prc"
     parcel = root.parcelDir + r"/parcel.exe"
@@ -393,7 +395,7 @@ def FinishedCreateYaml():
     Main()
 def ClosedCreateYaml():
     if (root.FirstLoad):
-        quitOut()
+        quit()
 
 def CreateYaml():
     if (not os.path.isdir(root.modParams)):   
@@ -530,8 +532,13 @@ root.canvasWidth = 640
 root.canvasHeight = 480 #240
 
 
+def OpenReadMe():
+    webbrowser.open('https://github.com/CSharpM7/SharpSmashSuite/tree/main/SteveSpec')
+def OpenWiki():
+    webbrowser.open('https://github.com/CSharpM7/SharpSmashSuite/wiki')
+
 root.string_vars = {}
-def OnSteveSettingUpdated(*args):#,side,var):
+def OnSteveSettingUpdated(*args):
     side = args[0]
     #remove letters from string
     value = root.string_vars[side].get()
@@ -546,6 +553,16 @@ def OnSteveSettingUpdated(*args):#,side,var):
     elif (side=="Bottom"):
         root.steveBottomValue = value
     DrawSteveBlock()
+
+def OnCanvasSettingUpdate(*args):
+    setting = args[0]
+    #remove letters from string
+    value = root.string_vars[setting].get()
+    value = re.sub('[^0-9,.]', '', value)
+    if (setting=="Max Collisions To Display"):
+        root.maxCollisions=int(value)
+        DrawCollisions()
+
 
 
 #This should really only run once, maybe I should split this up but idc
@@ -567,105 +584,86 @@ def CreateCanvas():
     root.filemenu = Menu(root.menubar, tearoff=0)
     root.filemenu.add_command(label="Set Mod Folder", command=LoadMod)
     root.filemenu.add_command(label="Set Yaml File", command=SetYaml)
-    root.filemenu.add_command(label="Export Settings", command=exportGroundInfo)
+    root.filemenu.add_command(label="Export Patch File To Mod", command=exportGroundInfo)
     root.filemenu.add_separator()
-    root.filemenu.add_command(label="Exit", command=quitOut)
+    root.filemenu.add_command(label="Exit", command=quit)
     root.menubar.add_cascade(label="File", menu=root.filemenu)
+
+    root.helpmenu = Menu(root.menubar, tearoff=0)
+    root.helpmenu.add_command(label="About", command=OpenReadMe)
+    root.helpmenu.add_command(label="Wiki", command=OpenWiki)
+    #root.helpmenu.add_command(label="About...", command=donothing)
+    root.menubar.add_cascade(label="Help", menu=root.helpmenu)
     root.config(menu=root.menubar)
 
-    #Settings displayed on the side, Could probably collapse some of these forloops into eachother for readability
+    #Settings displayed on the side,
     root.fr_Settings = Frame(root.mainFrame)
     root.fr_Settings.pack(padx=20,pady=20,fill = X,side=RIGHT,anchor=N)
 
-    root.lb_Steve = Label(root.fr_Settings,text="Steve Boundaries")
-    root.lb_Steve.pack(fill = X,expand=1)
-    steveSettings = {"Side":root.steveSideValue,
-    "Top":root.steveTopValue,
-    "Bottom":root.steveBottomValue,
+    stageData = {
+    "Label1":"Steve Boundaries",
+    "1_Side":root.steveSideValue,
+    "1_Top":root.steveTopValue,
+    "1_Bottom":root.steveBottomValue,
+    "Label2":"Camera Boundaries",
+    "2_Left":root.cameraLeftValue,
+    "2_Right":root.cameraRightValue,
+    "2_Top":root.cameraTopValue,
+    "2_Bottom":root.cameraBottomValue,
+    "Label3":"Blastzone Boundaries",
+    "3_Left":root.blastLeftValue,
+    "3_Right":root.blastRightValue,
+    "3_Top":root.blastTopValue,
+    "3_Bottom":root.blastBottomValue,
+    "Label4":"Stage Data",
+    "4_Radius":root.stageRadius,
+    "4_Top":root.stageTop,
+    "4_Bottom": root.stageBottom,
+    "Label5":"Canvas Settings",
+    "5_Max Collisions To Display":root.maxCollisions
     }
-    root.steveSettings = {}
-    for setting in steveSettings:
-        root.string_vars.update({setting:StringVar(name=setting)})
-        var = root.string_vars[setting]
-        var.trace_add("write",OnSteveSettingUpdated)
+    root.stageData = {}
+    for data in stageData:
+        #For labels, don't use Entries
+        if ("Label" in data):
+            dataFrame = Frame(root.fr_Settings)
+            dataFrame.pack(fill = X,expand=1)
+            dataName = Label(dataFrame,text=stageData[data])
+            dataName.pack(fill = BOTH)
+            continue
+        dataText=re.sub(r'[^a-zA-Z ]', '', data)
+        dataDefault = truncate(str(stageData[data]),E,6)
 
-        settingDefault = steveSettings[setting]
-        settingFrame = Frame(root.fr_Settings)
-        settingFrame.pack(fill = X,expand=1)
-        settingName = Entry(settingFrame,width=15)
-        settingName.insert(0,setting)
-        settingName.configure(state ='disabled')
-        settingName.pack(side = LEFT, fill = BOTH,anchor=E)
-        settingEntry = Entry(settingFrame,width=15,textvariable=var)
-        settingEntry.insert(0,settingDefault)
-        settingEntry.pack(side = RIGHT, fill = BOTH,expand=1)
-        root.steveSettings.update({setting:settingEntry})
+        dataFrame = Frame(root.fr_Settings)
+        dataFrame.pack(fill = X,expand=1)
+        dataName = Entry(dataFrame)
+        dataName.insert(0,dataText)
+        dataName.configure(state ='disabled')
+        dataName.pack(side = LEFT, fill = BOTH,anchor=E)
+        dataEntry=None
+        #For Steve Entries, trace any updates
+        if ("1_" in data or "5_" in data):
+            root.string_vars.update({dataText:StringVar(name=dataText)})
+            var = root.string_vars[dataText]
+            if ("1_" in data):
+                var.trace_add("write",OnSteveSettingUpdated)
+            else:
+                var.trace_add("write",OnCanvasSettingUpdate)
 
-    root.lb_Camera = Label(root.fr_Settings,text="Camera Boundaries")
-    root.lb_Camera.pack(fill = X,expand=1)
-    cameraSettings = {"Left":root.cameraLeftValue,
-    "Right":root.cameraRightValue,
-    "Top":root.cameraTopValue,
-    "Bottom":root.cameraBottomValue,
-    }
-    root.cameraSettings = {}
-    for setting in cameraSettings:
-        settingDefault = truncate(str(cameraSettings[setting]),E,6)
-        settingFrame = Frame(root.fr_Settings)
-        settingFrame.pack(fill = X,expand=1)
-        settingName = Entry(settingFrame,width=15)
-        settingName.insert(0,setting)
-        settingName.configure(state ='disabled')
-        settingName.pack(side = LEFT, fill = BOTH,anchor=E)
-        settingEntry = Entry(settingFrame,width=15)
-        settingEntry.insert(0,settingDefault)
-        settingEntry.pack(side = RIGHT, fill = BOTH,expand=1)
-        settingEntry.configure(state ='disabled')
-        root.cameraSettings.update({setting:settingEntry})
+            dataEntry = Entry(dataFrame,textvariable=var)
+            dataEntry.insert(0,dataDefault)
+        #Disable non-editable categories
+        else:
+            dataEntry = Entry(dataFrame)
+            dataEntry.insert(0,dataDefault)
+            dataEntry.configure(state ='disabled')
+        dataEntry.pack(side = RIGHT, fill = BOTH,expand=1)
 
-    root.lb_Blast = Label(root.fr_Settings,text="Blastzone Boundaries")
-    root.lb_Blast.pack(fill = X,expand=1)
-    blastSettings = {"Left":root.blastLeftValue,
-    "Right":root.blastRightValue,
-    "Top":root.blastTopValue,
-    "Bottom":root.blastBottomValue,
-    }
-    root.blastSettings = {}
-    for setting in blastSettings:
-        settingDefault = truncate(str(blastSettings[setting]),E,6)
-        settingFrame = Frame(root.fr_Settings)
-        settingFrame.pack(fill = X,expand=1)
-        settingName = Entry(settingFrame,width=15)
-        settingName.insert(0,setting)
-        settingName.configure(state ='disabled')
-        settingName.pack(side = LEFT, fill = BOTH,anchor=E)
-        settingEntry = Entry(settingFrame,width=15)
-        settingEntry.insert(0,settingDefault)
-        settingEntry.pack(side = RIGHT, fill = BOTH,expand=1)
-        settingEntry.configure(state ='disabled')
-        root.blastSettings.update({setting:settingEntry})
-        
-    root.lb_Stage = Label(root.fr_Settings,text="Stage Data")
-    root.lb_Stage.pack(fill = X,expand=1)
-    stageSettings = {"Radius":root.stageRadius,
-    "Top":root.stageTop,
-    "Bottom": root.stageBottom
-    }
-    root.stageSettings = {}
-    for setting in stageSettings:
-        settingDefault = truncate(str(stageSettings[setting]),E,6)
-        settingFrame = Frame(root.fr_Settings)
-        settingFrame.pack(fill = X,expand=1)
-        settingName = Entry(settingFrame,width=15)
-        settingName.insert(0,setting)
-        settingName.configure(state ='disabled')
-        settingName.pack(side = LEFT, fill = BOTH,anchor=E)
-        settingEntry = Entry(settingFrame,width=15)
-        settingEntry.insert(0,settingDefault)
-        settingEntry.pack(side = RIGHT, fill = BOTH,expand=1)
-        settingEntry.configure(state ='disabled')
-        root.stageSettings.update({setting:settingEntry})
-    #End of side settings
+        root.stageData.update({data:dataEntry})
+
+    #Wizard Button
+    button = Button(root.fr_Settings, text="Wizard", command=quit)
+    button.pack(side = RIGHT, fill = BOTH,expand=1,pady=10,padx=4)
 
 #Load info from yaml into our canvas
 def ParseYaml():
@@ -752,6 +750,7 @@ def DrawBoundaries():
     root.my_canvas.coords(root.blastArea,x1,y1,x2,y2)
 
 def DrawCollisions():
+    root.my_canvas.delete("collision")
     for c in range(min(len(root.collisions),root.maxCollisions)):
         col = root.collisions[c]
         for vert in range(len(col)-1):
@@ -766,18 +765,17 @@ def DrawCollisions():
 def RefreshCanvas():
     DrawSteveBlock()
     DrawBoundaries()
-    root.my_canvas.delete("collision")
     DrawCollisions()
 
 def Main():
-    UpdateTitle(os.path.basename(root.modDir) +":"+os.path.basename(root.yamlFile))
+    UpdateTitle(os.path.basename(root.modDir) +": "+os.path.basename(root.yamlFile))
     ParseYaml()
     if (root.FirstLoad):
         CreateCanvas()
         root.FirstLoad=False
     RefreshCanvas()
 
-def quitOut():
+def quit():
     root.withdraw()
     sys.exit("user exited")
 

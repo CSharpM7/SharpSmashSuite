@@ -1,0 +1,73 @@
+---
+collisions:
+  - entry:
+      name: COL_00_Platform01_through
+      subname: 00_Platform01_through
+      start_pos:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      use_start: false
+      unk: 0
+      unk2:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      unk3: 4294967295
+      bone_name: ""
+    col_flags:
+      flag1: false
+      rig_col: false
+      flag3: false
+      drop_through: true
+    verts:
+      - x: RadiusL
+        y: -40.0
+      - x: RadiusL
+        y: 0.0
+      - x: RadiusR
+        y: 0.0
+      - x: RadiusR
+        y: -40.0
+      - x: RadiusL
+        y: -40.0
+camera:
+  - entry:
+      name: CAMERA_00
+      subname: "00"
+      start_pos:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      use_start: false
+      unk: 0
+      unk2:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      unk3: 4294967295
+      bone_name: ""
+    left: CameraLeft
+    right: CameraRight
+    top: CameraTop
+    bottom: CameraBottom
+blastzones:
+  - entry:
+      name: DEATH_00
+      subname: "00"
+      start_pos:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      use_start: false
+      unk: 0
+      unk2:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      unk3: 4294967295
+      bone_name: ""
+    left: BlastLeft
+    right: BlastRight
+    top: BlastTop
+    bottom: BlastBottom
