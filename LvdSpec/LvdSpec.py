@@ -205,6 +205,23 @@ root.stageName = ""
 root.steveSideValue = 0
 root.steveTopValue = 0
 root.steveBottomValue = 0
+root.steveOrginX=0
+root.steveOrginY=0
+root.steveSensitivity=0
+root.steveOffset=0
+root.steveMaterial="soil"
+root.steveTable={
+    "Steve_Label":"Steve LVD Settings",
+    "Steve_material":root.steveMaterial,
+    "Steve_origin_x":root.steveOrginX,
+    "Steve_origin_y":root.steveOrginY,
+    "Steve_cell_sensitivity":root.steveSensitivity,
+    "Steve_line_offset":root.steveOffset,
+    "Steve_cell_minilen_side":0,
+    "Steve_cell_minilen_top":0,
+    "Steve_cell_minilen_bottom":0
+}
+
 root.cameraLeftValue=-0
 root.cameraRightValue=0
 root.cameraTopValue=0
@@ -217,13 +234,35 @@ root.stageRadius=0
 root.stageTop=0
 root.stageBottom=0
 root.collisions=[]
+root.maxCollisionsTag="Collisions To Show"
 root.maxCollisions=50
+
+
+root.stageDataTable = {
+"Camera_Label":"Camera Boundaries",
+"Camera_Left":root.cameraLeftValue,
+"Camera_Right":root.cameraRightValue,
+"Camera_Top":root.cameraTopValue,
+"Camera_Bottom":root.cameraBottomValue,
+"Blast_Label":"Blastzone Boundaries",
+"Blast_Left":root.blastLeftValue,
+"Blast_Right":root.blastRightValue,
+"Blast_Top":root.blastTopValue,
+"Blast_Bottom":root.blastBottomValue,
+"Stage_Label":"Stage Data",
+"Stage_Radius":root.stageRadius,
+"Stage_Top":root.stageTop,
+"Stage_Bottom": root.stageBottom,
+"Canvas_Label":"Canvas Settings",
+"Canvas_"+root.maxCollisionsTag:root.maxCollisions
+}
 
 root.levelFile = ""
 root.modParams = ""
 root.popup = None
 root.popupOptions = {}
 root.FirstLoad=True
+root.Loading=True
 
 #Deprecated
 def SetStageFromRoot():
@@ -415,6 +454,7 @@ def SetYaml(automatic=False):
                 messagebox.showwarning(root.programName,"Yamlvd not compatible with this stage! Let's create a yaml file!")
                 CreateYaml()
 
+    root.Loading=True
     root.collisions=[]
     if (root.levelFile != ""):
         SetStageFromLVD() 
@@ -460,14 +500,17 @@ def ParseSteve():
                 treeRoot.remove(type_tag)
             else:
                 for child in type_tag:
-                    childName = child.get("hash")
-
-                    if (childName == "cell_minilen_side"):
-                        root.steveSideValue = float(child.text)
-                    elif (childName == "cell_minilen_top"):
-                        root.steveTopValue = float(child.text)
-                    elif (childName == "cell_minilen_bottom"):
-                        root.steveBottomValue = float(child.text)
+                    childName = "Steve_"+child.get("hash")
+                    if (childName in list(root.steveTable.keys())):
+                        if (childName!="Steve_material"):
+                            print(childName+":"+child.text)
+                            root.steveTable.update({childName:float(child.text)})
+                    #if (childName == "cell_minilen_side"):
+                    #    root.steveSideValue = float(child.text)
+                    #elif (childName == "cell_minilen_top"):
+                    #    root.steveTopValue = float(child.text)
+                    #elif (childName == "cell_minilen_bottom"):
+                    #    root.steveBottomValue = float(child.text)
         tree.write(root.TempGroundInfo)
 
 def exportGroundInfoLazy():
@@ -525,38 +568,44 @@ def OpenWiki():
 
 root.string_vars = {}
 def OnSteveSettingUpdated(*args):
-    side = args[0]
+    if (root.Loading):
+        return
+    variable = "Steve_"+args[0]
     #remove letters from string
-    value = root.string_vars[side].get()
+    value = root.string_vars[variable].get()
     value = re.sub('[^0-9,.]', '', value)
     if (value==''): return #if there are no numbers, return
 
     value=float(value)
-    if (side=="Side"):
-        root.steveSideValue = value
-    elif (side=="Top"):
-        root.steveTopValue = value
-    elif (side=="Bottom"):
-        root.steveBottomValue = value
+    print("Updated "+variable+" with "+str(value))
+    root.steveTable.update({variable:value})
+    #if (side=="Side"):
+    #    root.steveSideValue = value
+    #elif (side=="Top"):
+    #    root.steveTopValue = value
+    #elif (side=="Bottom"):
+    #    root.steveBottomValue = value
     DrawSteveBlock()
 
 def OnCanvasSettingUpdate(*args):
-    setting = args[0]
+    if (root.Loading):
+        return
+    setting = "Canvas_"+args[0]
     #remove letters from string
     value = root.string_vars[setting].get()
     value = re.sub('[^0-9,.]', '', value)
-    if (setting=="Max Collisions To Display" and value != ""):
+    if (setting=="Canvas_"+root.maxCollisionsTag and value != ""):
         root.maxCollisions=int(value)
         DrawCollisions()
 
 
 
-root.canvasWidth = 640
+root.canvasWidth = 576
 root.canvasHeight = 480 
 #This should really only run once, maybe I should split this up but idk
 def CreateCanvas():
     #Define window stuff
-    root.geometry("960x512")
+    root.geometry("1080x512")
     root.deiconify()
     root.mainFrame = Frame(root)
     root.mainFrame.pack(fill = X,expand=1)
@@ -585,23 +634,36 @@ def CreateCanvas():
 
     #Settings displayed on the side,
     root.fr_Settings = Frame(root.mainFrame)
-    root.fr_Settings.pack(padx=20,pady=20,fill = X,side=RIGHT,anchor=N)
+    root.fr_Settings.pack(pady=20,expand=1,fill=BOTH,side=RIGHT)
+    root.fr_SteveSettings = Frame(root.fr_Settings)
+    root.fr_SteveSettings.pack(padx=10,side=LEFT,anchor=N)
+    root.fr_StageSettings = Frame(root.fr_Settings)
+    root.fr_StageSettings.pack(padx=10,side=LEFT,anchor=N)
 
     root.stageData = {}
-    for data in root.stageDataTable:
+    dataTable = {}
+    dataTable.update(root.steveTable)
+    dataTable.update(root.stageDataTable)
+    for data in dataTable:
+        frame = root.fr_StageSettings
+        if ("Steve" in data):
+            frame = root.fr_SteveSettings
         #For labels, don't use Entries
         if ("Label" in data):
-            dataFrame = Frame(root.fr_Settings)
+            dataFrame = Frame(frame)
             dataFrame.pack(fill = X,expand=1)
-            dataName = Label(dataFrame,text=root.stageDataTable[data])
+            dataName = Label(dataFrame,text=dataTable[data])
             dataName.pack(fill = BOTH)
             continue
+
+        print(data)
         dataText=re.sub(r'[^a-zA-Z _]', '', data)
         dataText=dataText[dataText.index("_")+1:]
-        dataDefault = truncate(str(root.stageDataTable[data]),E,6)
+        dataDefault = truncate(str(dataTable[data]),E,6)
 
-        dataFrame = Frame(root.fr_Settings)
+        dataFrame = Frame(frame)
         dataFrame.pack(fill = X,expand=1)
+
         dataName = Entry(dataFrame)
         dataName.insert(0,dataText)
         dataName.configure(state ='disabled')
@@ -609,9 +671,9 @@ def CreateCanvas():
         dataEntry=None
         #For Steve Entries, trace any updates
         if ("Steve" in data or "Canvas" in data):
-            root.string_vars.update({dataText:StringVar(name=dataText)})
-            var = root.string_vars[dataText]
-            if ("1_" in data):
+            root.string_vars.update({data:StringVar(name=dataText)})
+            var = root.string_vars[data]
+            if ("Steve" in data):
                 var.trace_add("write",OnSteveSettingUpdated)
             else:
                 var.trace_add("write",OnCanvasSettingUpdate)
@@ -624,11 +686,10 @@ def CreateCanvas():
             dataEntry.insert(0,dataDefault)
             dataEntry.configure(state ='disabled')
         dataEntry.pack(side = RIGHT, fill = BOTH,expand=1)
-
         root.stageData.update({data:dataEntry})
 
     #Wizard Button
-    button = Button(root.fr_Settings, text="Wizard", command=quit)
+    button = Button(root.fr_SteveSettings, text="Wizard", command=quit)
     button.pack(side = RIGHT, fill = BOTH,expand=1,pady=10,padx=4)
 
 #Load info from yaml into our canvas
@@ -680,28 +741,22 @@ def ParseYaml():
         root.stageTop=highestY
         root.stageBottom=lowestY
 
-    root.stageDataTable = {
-    "Steve_Label":"Steve Boundaries",
-    "Steve_Side":root.steveSideValue,
-    "Steve_Top":root.steveTopValue,
-    "Steve_Bottom":root.steveBottomValue,
-    "Camera_Label":"Camera Boundaries",
+    stageDataTableUpdates={
     "Camera_Left":root.cameraLeftValue,
     "Camera_Right":root.cameraRightValue,
     "Camera_Top":root.cameraTopValue,
     "Camera_Bottom":root.cameraBottomValue,
-    "Blast_Label":"Blastzone Boundaries",
     "Blast_Left":root.blastLeftValue,
     "Blast_Right":root.blastRightValue,
     "Blast_Top":root.blastTopValue,
     "Blast_Bottom":root.blastBottomValue,
-    "Stage_Label":"Stage Data",
     "Stage_Radius":root.stageRadius,
     "Stage_Top":root.stageTop,
     "Stage_Bottom": root.stageBottom,
-    "Canvas_Label":"Canvas Settings",
-    "Canvas_Max Collisions To Display":root.maxCollisions
     }
+    for d in stageDataTableUpdates:
+        root.stageDataTable.update({d:stageDataTableUpdates[d]})
+
 
 root.my_canvas = None
 
@@ -725,15 +780,18 @@ def DrawSteveBlock():
         root.my_canvas.coords(root.steveArea,-10,-10,-10,-10)
         return
 
+    side=root.steveTable["Steve_cell_minilen_side"]
+    top=root.steveTable["Steve_cell_minilen_top"]
+    bottom=root.steveTable["Steve_cell_minilen_bottom"]
     xC = root.canvasWidth/2
     yC = root.canvasHeight/2
-    x1 = root.cameraLeftValue+root.steveSideValue
-    x2 = root.cameraRightValue-root.steveSideValue
-    y1 = root.cameraTopValue-root.steveTopValue
-    y2 = root.cameraBottomValue+root.steveBottomValue
-    if (y2>y1 and root.steveBottomValue>root.steveTopValue):
+    x1 = root.cameraLeftValue+side
+    x2 = root.cameraRightValue-side
+    y1 = root.cameraTopValue-top
+    y2 = root.cameraBottomValue+bottom
+    if (y2>y1 and bottom>top):
         y2=y1
-    elif(y1<y2 and root.steveTopValue>root.steveBottomValue):
+    elif(y1<y2 and top>bottom):
         y1=y2
     x1,y1,x2,y2 = GetAdjustedCoordinates(x1,y1,x2,y2)
     root.my_canvas.coords(root.steveArea,x1,y1,x2,y2)
@@ -760,18 +818,24 @@ def RefreshCanvas():
     DrawSteveBlock()
     DrawBoundaries()
     DrawCollisions()
+
+def RefreshValues():
     disableSteve = "disable" if (root.stageName=="") else "normal"
     for data in root.stageData:
         entry = root.stageData[data]
-        value = root.stageDataTable[data]
         entry.delete(0,END)
-        entry.insert(0,value)
         if ("Steve" in data):
+            #dataName = data.replace("Steve_","")
+            value = root.steveTable[data]
+            print("Refresh:"+data+":"+str(value))
             if (root.stageName==""):
-                entry.delete(0,END)
                 entry.insert(0,"?")
+            else:
+                entry.insert(0,value)
             entry.configure(state = disableSteve)
         elif ("Canvas" in data):
+            value = root.stageDataTable[data]
+            entry.insert(0,value)
             entry.configure(state = disableSteve)
     root.filemenu.entryconfig("Export Patch File To Mod", state=disableSteve)
 
@@ -784,8 +848,11 @@ def Main():
     ParseYaml()
     if (root.FirstLoad):
         CreateCanvas()
-        root.FirstLoad=False
+    else:
+        RefreshValues()
     RefreshCanvas()
+    root.FirstLoad=False
+    root.Loading=False
 
 def quit():
     root.withdraw()
