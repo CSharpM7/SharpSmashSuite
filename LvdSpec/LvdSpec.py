@@ -66,7 +66,7 @@ defaultConfig['DEFAULT'] = {
     'arcDir' : "",
     'yamlvd' : "",
     'stageParamsLocation' : "",
-    'modDir' : ""
+    'levelFile' : ""
     }
 def CreateConfig():
     print("creating valid config")
@@ -201,113 +201,70 @@ config.set("DEFAULT","stageParamsLocation",root.stageParams)
 with open('config.ini', 'w+') as configfile:
     config.write(configfile)
 
-root.stageName = None
-root.cameraLeftValue=-190
-root.cameraRightValue=190
-root.cameraTopValue=145
-root.cameraBottomValue=-60
-root.blastLeftValue=-190
-root.blastRightValue=190
-root.blastTopValue=145
-root.blastBottomValue=-60
-root.stageRadius=80
-root.stageTop=50
-root.stageBottom=-40
+root.stageName = ""
+root.steveSideValue = 0
+root.steveTopValue = 0
+root.steveBottomValue = 0
+root.cameraLeftValue=-0
+root.cameraRightValue=0
+root.cameraTopValue=0
+root.cameraBottomValue=0
+root.blastLeftValue=0
+root.blastRightValue=0
+root.blastTopValue=0
+root.blastBottomValue=0
+root.stageRadius=0
+root.stageTop=0
+root.stageBottom=0
 root.collisions=[]
 root.maxCollisions=50
 
-root.yamlFile = ""
+root.levelFile = ""
 root.modParams = ""
 root.popup = None
 root.popupOptions = {}
 root.FirstLoad=True
 
-def LoadMod():
-    #On First Load, read from config
-    if (root.FirstLoad):
-        root.modDir = config["DEFAULT"]["modDir"]
-        if (not os.path.isdir(root.modDir)):
-            root.modDir = ""
-
-        #If no proper directory, manually set
-        if (root.modDir == ""):
-            setModDir()
-        #else, ask if user wants to use mod directory from config
-        else:
-            if (IsValidModFolder()):
-                basename = os.path.basename(root.modDir)
-                res = messagebox.askquestion(root.title(), 'Use most recent search directory? ('+basename+')')
-                if res == 'yes':
-                    print("using same mod dir")
-                elif res == 'no':
-                    setModDir()
-                    print("new mod directory")
-                #else:
-                #    root.destroy()
-                #    sys.exit("exited prompt")
-            else:
-                setModDir()
-    #If called from File menu, then set mod directory
-    else:
-        originalModDir = root.modDir
-        setModDir(quitOnFail=False)
-
-        #If no proper directory, then return
-        if (not os.path.isdir(root.modDir)):
-            root.modDir = ""
-        if (root.modDir==""):
-            root.modDir = originalModDir
-            return
-
-    #Update config
-    if (root.modDir!= ""):
-        config.set("DEFAULT","modDir",root.modDir)
-        with open('config.ini', 'w+') as configfile:
-            config.write(configfile)
-        print("Mod set to "+os.path.basename(root.modDir))
-
-    #Reset stage-specific options
-    root.stageName = ""
-    root.yamlFile = ""
-    root.modParams = ""
-    SetStageFromRoot()
-    SetYaml(automatic=True)
-
+#Deprecated
 def SetStageFromRoot():
     print("Open Stage from root:"+root.modDir)
 
     if (root.modDir==""):
         SetYaml(False)
         return
-
-    subfolders = [f.path for f in os.scandir(root.modDir) if f.is_dir()]
-    for dirname in list(subfolders):
-        if (os.path.basename(dirname) == "stage"):
-            stagesubfolder = [s.path for s in os.scandir(dirname) if s.is_dir()]
-            root.stageName = os.path.basename(stagesubfolder[0])
-            if (root.stageName == "common"):
-                root.stageName = None
-                if (len(stagesubfolder)>1):
-                    root.stageName = os.path.basename(stagesubfolder[1])
-
-    if (root.stageName == None):
-        messagebox.showerror(root.programName,"There is no valid stage within that stage folder!")
-        root.destroy()
-        sys.exit("Not a stage folder")
-
-    root.modParams = root.modDir + "/stage/"+root.stageName+"/normal/param/"
-    print("Stage Loaded, stage params should be at "+root.modParams)
+    SetStage(root.modDir+ "/stage/")
 
 def SetStageFromLVD():
-    print("uh oh")
+    stageKey="/stage/"
+    stageLocation = root.levelFile[:root.levelFile.index(stageKey)+len(stageKey)]
+    print(stageLocation)
+    SetStage(stageLocation)
+
+def SetStage(stageDir):
+    print("Find stage at "+stageDir)
+    root.stageName = None
+    subfolders = [s.path for s in os.scandir(stageDir) if s.is_dir()]
+    for dirname in list(subfolders):
+        if (dirname != "common"):
+            root.stageName = os.path.basename(dirname)
+    if (root.stageName == None):
+        messagebox.showerror(root.programName,"There is no valid stage within that stage folder!")
+        return
+        #root.destroy()
+        #sys.exit("Not a stage folder")
+
+    root.modParams = stageDir+root.stageName+"/normal/param/"
+    print("Stage Loaded, stage params should be at "+root.modParams)
+
+
 
 def FinishedCreateYaml():
     #create yaml by copying our sample
-    root.yamlFile = root.modParams+root.stageName+"_spec.yaml"
-    shutil.copy(os.getcwd() + "/sample.yaml", root.yamlFile)
+    root.levelFile = root.modParams+root.stageName+"_spec.yaml"
+    shutil.copy(os.getcwd() + "/sample.yaml", root.levelFile)
 
     # Replace all tagged values
-    with open(root.yamlFile, 'r') as file :
+    with open(root.levelFile, 'r') as file :
         filedata = file.read()
 
     for option in root.popupOptions:
@@ -317,12 +274,12 @@ def FinishedCreateYaml():
     filedata = filedata.replace("RingR", root.popupOptions["StageRadius"].get())
 
     # Write to the copy
-    with open(root.yamlFile, 'w') as file:
+    with open(root.levelFile, 'w') as file:
         file.write(filedata)
 
     #Destroy popup, and return to main
     root.popup.destroy()
-    Main()
+
 def ClosedCreateYaml():
     if (root.FirstLoad):
         quit()
@@ -373,12 +330,20 @@ def CreateYaml():
     root.popup.protocol("WM_DELETE_WINDOW", ClosedCreateYaml)
     root.withdraw();
 
+def LoadLastYaml():
+    root.levelFile = config["DEFAULT"]["levelFile"]
+    if (not os.path.exists(root.levelFile)):
+        root.levelFile = ""
+    else:
+        SetStageFromLVD()
+    Main()
+
 def SetYaml(automatic=False):
-    originalYaml = root.yamlFile
-    root.yamlFile=""
+    originalYaml = root.levelFile
+    root.levelFile=""
     #Attempt to find automatically first, if valid directory file exists
     if (automatic and os.path.isdir(root.modParams)):
-        if (root.yamlFile == ""):
+        if (root.levelFile == ""):
             #Automatically comb through modParams to find the first yaml file
             paramfiles = [f for f in listdir(root.modParams) if os.path.exists(os.path.join(root.modParams, f))]
             root.yaml = {}
@@ -387,12 +352,12 @@ def SetYaml(automatic=False):
                 extension = os.path.splitext(os.path.basename(f))[1]
                 if (extension == ".yaml"):
                     #if (root.stageName in filename): #this checks if the filename contains the stage name, which might not always be the case
-                    root.yamlFile = root.modParams +f
+                    root.levelFile = root.modParams +f
                     break
 
-    if (root.yamlFile != ""):
-        print(os.path.basename(root.yamlFile)+" was automatically retrieved")
-    elif (root.yamlFile == "" or not automatic):
+    if (root.levelFile != ""):
+        print(os.path.basename(root.levelFile)+" was automatically retrieved")
+    elif (root.levelFile == "" or not automatic):
         #SetYaml manually. First select an lvd/yaml file
         messagebox.showinfo(root.programName,"Select your stage collision file (usually found in stage/normal/params)")        
         filetypes = (
@@ -405,32 +370,24 @@ def SetYaml(automatic=False):
         if (desiredFile == ""):
             print("No lvd selected")
             #enter manually if rejected, and no current file
-            if (root.yamlFile == "" and originalYaml==""):
+            if (root.levelFile == "" and originalYaml==""):
                 messagebox.showwarning(root.programName,"Let's manually create a yaml file then!")
                 CreateYaml()
             #otherwise close window?
             else:
-                root.yamlFile=originalYaml
+                root.levelFile=originalYaml
                 return
-            return
 
         #If it's the same file, do nothing
         if (desiredFile == originalYaml):
             return
 
         desiredFileName = os.path.basename(desiredFile)
-        print(os.path.basename(root.modDir)+"/"+desiredFileName)
-        if (root.modDir):
-            if (not Path(root.modDir) in Path(desiredFile).parents):
-                root.modDir=""
-                root.stageName=""
-                messagebox.showwarning(root.programName,"Level file does not match current stage; figuring out which stage is associated with this file")
-
         extension = os.path.splitext(desiredFileName)[1]
 
         #If it's a yaml file, continue to the main program
         if (extension == ".yaml"):
-            root.yamlFile = desiredFile
+            root.levelFile = desiredFile
         #else yamlvd it
         elif (extension == ".lvd"):
             print("Use yamlvd")
@@ -447,26 +404,32 @@ def SetYaml(automatic=False):
                     config.write(configfile)
 
             #run yamlvd on the lvd file
-            root.yamlFile = desiredFile.replace(".lvd",".yaml")
-            subcall = [root.yamlvd,desiredFile,root.yamlFile]
+            root.levelFile = desiredFile.replace(".lvd",".yaml")
+            subcall = [root.yamlvd,desiredFile,root.levelFile]
             with open('output.txt', 'a+') as stdout_file:
                 process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
                 print(process_output.__dict__)
             #if yamlvd doesn't work with this stage, enter values manually
-            if (not os.path.exists(root.yamlFile)):
+            if (not os.path.exists(root.levelFile)):
                 #enter manually
                 messagebox.showwarning(root.programName,"Yamlvd not compatible with this stage! Let's create a yaml file!")
                 CreateYaml()
 
     root.collisions=[]
-    if (root.stageName==""):
-        SetStageFromLVD()  
-    ParseSteve()
+    if (root.levelFile != ""):
+        SetStageFromLVD() 
+
+        config.set("DEFAULT","levelFile",root.levelFile)
+        with open('config.ini', 'w+') as configfile:
+            config.write(configfile)
+    Main() 
 
 def ParseSteve():
     root.steveSideValue = 0
     root.steveTopValue = 0
     root.steveBottomValue = 0
+    if (root.stageName == ""):
+        return
 
     defaultGroundInfo = os.getcwd() + r"\groundconfig.prcxml"
     root.TempGroundInfo = os.getcwd() + r"\tempconfig.prcxml"
@@ -506,15 +469,16 @@ def ParseSteve():
                     elif (childName == "cell_minilen_bottom"):
                         root.steveBottomValue = float(child.text)
         tree.write(root.TempGroundInfo)
-    Main()
 
 def exportGroundInfoLazy():
+    #Shit
     targetLocation = root.modDir + root.stageParamsFolderShortcut
     shutil.copy(root.TempGroundInfo,targetLocation + r"\groundconfig.prcxml")
     messagebox.showinfo(root.programName,"Exported Info to "+root.stageName)
     webbrowser.open(targetLocation)
 
 def exportGroundInfo():
+    #shit
     #Part one of parcel: patch the original file with our edited values
     targetLocation = root.modDir + root.stageParamsFolderShortcut
     if (not os.path.exists(targetLocation)):
@@ -581,7 +545,7 @@ def OnCanvasSettingUpdate(*args):
     #remove letters from string
     value = root.string_vars[setting].get()
     value = re.sub('[^0-9,.]', '', value)
-    if (setting=="Max Collisions To Display"):
+    if (setting=="Max Collisions To Display" and value != ""):
         root.maxCollisions=int(value)
         DrawCollisions()
 
@@ -606,7 +570,6 @@ def CreateCanvas():
     #File menu
     root.menubar = Menu(root)
     root.filemenu = Menu(root.menubar, tearoff=0)
-    root.filemenu.add_command(label="Set Mod Folder", command=LoadMod)
     root.filemenu.add_command(label="Load Stage Collision File", command=SetYaml)
     root.filemenu.add_command(label="Export Patch File To Mod", command=exportGroundInfo)
     root.filemenu.add_separator()
@@ -624,40 +587,18 @@ def CreateCanvas():
     root.fr_Settings = Frame(root.mainFrame)
     root.fr_Settings.pack(padx=20,pady=20,fill = X,side=RIGHT,anchor=N)
 
-    stageData = {
-    "Steve_Label":"Steve Boundaries",
-    "Steve_Side":root.steveSideValue,
-    "Steve_Top":root.steveTopValue,
-    "Steve_Bottom":root.steveBottomValue,
-    "Camera_Label":"Camera Boundaries",
-    "Camera_Left":root.cameraLeftValue,
-    "Camera_Right":root.cameraRightValue,
-    "Camera_Top":root.cameraTopValue,
-    "Camera_Bottom":root.cameraBottomValue,
-    "Blast_Label":"Blastzone Boundaries",
-    "Blast_Left":root.blastLeftValue,
-    "Blast_Right":root.blastRightValue,
-    "Blast_Top":root.blastTopValue,
-    "Blast_Bottom":root.blastBottomValue,
-    "Stage_Label":"Stage Data",
-    "Stage_Radius":root.stageRadius,
-    "Stage_Top":root.stageTop,
-    "Stage_Bottom": root.stageBottom,
-    "Canvas_Label":"Canvas Settings",
-    "Canvas_Max Collisions To Display":root.maxCollisions
-    }
     root.stageData = {}
-    for data in stageData:
+    for data in root.stageDataTable:
         #For labels, don't use Entries
         if ("Label" in data):
             dataFrame = Frame(root.fr_Settings)
             dataFrame.pack(fill = X,expand=1)
-            dataName = Label(dataFrame,text=stageData[data])
+            dataName = Label(dataFrame,text=root.stageDataTable[data])
             dataName.pack(fill = BOTH)
             continue
         dataText=re.sub(r'[^a-zA-Z _]', '', data)
         dataText=dataText[dataText.index("_")+1:]
-        dataDefault = truncate(str(stageData[data]),E,6)
+        dataDefault = truncate(str(root.stageDataTable[data]),E,6)
 
         dataFrame = Frame(root.fr_Settings)
         dataFrame.pack(fill = X,expand=1)
@@ -692,52 +633,75 @@ def CreateCanvas():
 
 #Load info from yaml into our canvas
 def ParseYaml():
-    print("Parsing yaml:"+root.yamlFile)
-    with open(root.yamlFile, "r") as stream:
-        try:
-            root.yaml = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
-            root.destroy()
-            sys.exit("Yaml exploded")
+    if (root.levelFile!=""):
+        print("Parsing yaml:"+root.levelFile)
+        with open(root.levelFile, "r") as stream:
+            try:
+                root.yaml = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+                root.destroy()
+                sys.exit("Yaml exploded")
 
-    root.collisions=[]
-    for i in root.yaml:
-        #print(i)
-        #Get Camera Info
-        if (i=="camera"):
-            root.cameraLeftValue = float(root.yaml[i][0]["left"])
-            root.cameraRightValue = float(root.yaml[i][0]["right"])
-            root.cameraTopValue = float(root.yaml[i][0]["top"])
-            root.cameraBottomValue = float(root.yaml[i][0]["bottom"])
-        #get boundary Info
-        elif (i=="blastzones"):
-            root.blastLeftValue = float(root.yaml[i][0]["left"])
-            root.blastRightValue = float(root.yaml[i][0]["right"])
-            root.blastTopValue = float(root.yaml[i][0]["top"])
-            root.blastBottomValue = float(root.yaml[i][0]["bottom"])
-        #get collision Info
-        elif (i=="collisions"):
-            for c in root.yaml[i]:
-                root.collisions.append(c["verts"])
-    #Parse stage data
-    largestX=0
-    highestY=0
-    lowestY=0
-    for c in root.collisions:
-        for vert in range(len(c)-1):
-            x1=float(c[vert]["x"])
-            y1=float(c[vert]["y"])
-            if (x1>largestX):
-                largestX=x1
-            if (y1>highestY):
-                highestY=y1
-            elif (y1<lowestY):
-                lowestY=y1
-    root.stageRadius=largestX
-    root.stageTop=highestY
-    root.stageBottom=lowestY
+        root.collisions=[]
+        for i in root.yaml:
+            #print(i)
+            #Get Camera Info
+            if (i=="camera"):
+                root.cameraLeftValue = float(root.yaml[i][0]["left"])
+                root.cameraRightValue = float(root.yaml[i][0]["right"])
+                root.cameraTopValue = float(root.yaml[i][0]["top"])
+                root.cameraBottomValue = float(root.yaml[i][0]["bottom"])
+            #get boundary Info
+            elif (i=="blastzones"):
+                root.blastLeftValue = float(root.yaml[i][0]["left"])
+                root.blastRightValue = float(root.yaml[i][0]["right"])
+                root.blastTopValue = float(root.yaml[i][0]["top"])
+                root.blastBottomValue = float(root.yaml[i][0]["bottom"])
+            #get collision Info
+            elif (i=="collisions"):
+                for c in root.yaml[i]:
+                    root.collisions.append(c["verts"])
+        #Parse stage data
+        largestX=0
+        highestY=0
+        lowestY=0
+        for c in root.collisions:
+            for vert in range(len(c)-1):
+                x1=float(c[vert]["x"])
+                y1=float(c[vert]["y"])
+                if (x1>largestX):
+                    largestX=x1
+                if (y1>highestY):
+                    highestY=y1
+                elif (y1<lowestY):
+                    lowestY=y1
+        root.stageRadius=largestX
+        root.stageTop=highestY
+        root.stageBottom=lowestY
 
+    root.stageDataTable = {
+    "Steve_Label":"Steve Boundaries",
+    "Steve_Side":root.steveSideValue,
+    "Steve_Top":root.steveTopValue,
+    "Steve_Bottom":root.steveBottomValue,
+    "Camera_Label":"Camera Boundaries",
+    "Camera_Left":root.cameraLeftValue,
+    "Camera_Right":root.cameraRightValue,
+    "Camera_Top":root.cameraTopValue,
+    "Camera_Bottom":root.cameraBottomValue,
+    "Blast_Label":"Blastzone Boundaries",
+    "Blast_Left":root.blastLeftValue,
+    "Blast_Right":root.blastRightValue,
+    "Blast_Top":root.blastTopValue,
+    "Blast_Bottom":root.blastBottomValue,
+    "Stage_Label":"Stage Data",
+    "Stage_Radius":root.stageRadius,
+    "Stage_Top":root.stageTop,
+    "Stage_Bottom": root.stageBottom,
+    "Canvas_Label":"Canvas Settings",
+    "Canvas_Max Collisions To Display":root.maxCollisions
+    }
 
 root.my_canvas = None
 
@@ -757,7 +721,7 @@ def GetAdjustedCoordinates(x1=0,y1=0,x2=0,y2=0):
     return x1,y1,x2,y2
 
 def DrawSteveBlock():
-    if (root.modDir == ""):
+    if (root.stageName == ""):
         root.my_canvas.coords(root.steveArea,-10,-10,-10,-10)
         return
 
@@ -796,19 +760,27 @@ def RefreshCanvas():
     DrawSteveBlock()
     DrawBoundaries()
     DrawCollisions()
-    disableSteve = "disable" if (root.modDir=="") else "normal"
+    disableSteve = "disable" if (root.stageName=="") else "normal"
     for data in root.stageData:
+        entry = root.stageData[data]
+        value = root.stageDataTable[data]
+        entry.delete(0,END)
+        entry.insert(0,value)
         if ("Steve" in data):
-            entry = root.stageData[data]
             if (root.stageName==""):
                 entry.delete(0,END)
                 entry.insert(0,"?")
             entry.configure(state = disableSteve)
+        elif ("Canvas" in data):
+            entry.configure(state = disableSteve)
     root.filemenu.entryconfig("Export Patch File To Mod", state=disableSteve)
 
 def Main():
-    print("Running main")
-    UpdateTitle(os.path.basename(root.modDir) +": "+os.path.basename(root.yamlFile))
+    print("Running main: "+root.stageName)
+    if (root.stageName!=""):
+        UpdateTitle(os.path.basename(root.stageName) +": "+os.path.basename(root.levelFile))
+
+    ParseSteve()
     ParseYaml()
     if (root.FirstLoad):
         CreateCanvas()
@@ -819,5 +791,5 @@ def quit():
     root.withdraw()
     sys.exit("user exited")
 
-LoadMod()
+LoadLastYaml()
 root.mainloop()
