@@ -1,20 +1,49 @@
 import os
-from os import listdir
 import os.path
-import json
+from os import listdir
+from pathlib import Path
+
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
-from pathlib import Path
+import fileinput
+
 import shutil
 import subprocess
-import glob
 import sys
 import webbrowser
+
 import xml.etree.ElementTree as ET
 import yaml
 import configparser
+
 import re
+
+#create ui for program
+root = Tk()
+root.programName="LVD Spec"
+root.title(root.programName)
+root.iconbitmap(os.getcwd() +"/icon.ico")
+root.withdraw()
+
+# Check if yaml is installed
+package_name = 'yaml'
+
+import importlib.util
+spec = importlib.util.find_spec(package_name)
+if spec is None:
+    print(package_name +" is not installed")
+    #subcall = ["pip install"+package_name]
+    #with open('output.txt', 'w+') as stdout_file:
+    #    process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+    #    print(process_output.__dict__)
+    #spec = importlib.util.find_spec(package_name)
+    #if spec is None:
+    messagebox.showerror(root.programName,"Please install "+package_name+" to use this program!")
+    root.destroy()
+    sys.exit("User does not have "+package_name)
+
+
 
 #truncate strings for labels
 def truncate(string,direciton=W,limit=20,ellipsis=True):
@@ -50,12 +79,6 @@ if (not os.path.isfile(os.getcwd() + r"\config.ini")):
     CreateConfig()
 config.read('config.ini')
 
-#create ui for program
-root = Tk()
-root.programName="Steve Spec"
-root.title(root.programName)
-root.iconbitmap(os.getcwd() +"/icon.ico")
-root.withdraw()
 
 def UpdateTitle(newtitle=""):
     if (newtitle!=""):
@@ -138,6 +161,7 @@ def IsValidModFolder():
 
 #open folder dialogue
 def setModDir(quitOnFail=True):
+    quitOnFail=False
     messagebox.showinfo(root.programName,"Select your mod's main folder")
     root.modDir = filedialog.askdirectory(title = "Select your mod's main folder")
     if (root.modDir == ""):
@@ -218,9 +242,9 @@ def LoadMod():
                 elif res == 'no':
                     setModDir()
                     print("new mod directory")
-                else:
-                    root.destroy()
-                    sys.exit("exited prompt")
+                #else:
+                #    root.destroy()
+                #    sys.exit("exited prompt")
             else:
                 setModDir()
     #If called from File menu, then set mod directory
@@ -236,19 +260,26 @@ def LoadMod():
             return
 
     #Update config
-    config.set("DEFAULT","modDir",root.modDir)
-    with open('config.ini', 'w+') as configfile:
-        config.write(configfile)
-    print("Mod set to "+os.path.basename(root.modDir))
+    if (root.modDir!= ""):
+        config.set("DEFAULT","modDir",root.modDir)
+        with open('config.ini', 'w+') as configfile:
+            config.write(configfile)
+        print("Mod set to "+os.path.basename(root.modDir))
 
     #Reset stage-specific options
     root.stageName = ""
     root.yamlFile = ""
     root.modParams = ""
-    root.collisions=[]
-    OpenStage()
+    SetStageFromRoot()
+    SetYaml(automatic=True)
 
-def OpenStage():
+def SetStageFromRoot():
+    print("Open Stage from root:"+root.modDir)
+
+    if (root.modDir==""):
+        SetYaml(False)
+        return
+
     subfolders = [f.path for f in os.scandir(root.modDir) if f.is_dir()]
     for dirname in list(subfolders):
         if (os.path.basename(dirname) == "stage"):
@@ -259,117 +290,16 @@ def OpenStage():
                 if (len(stagesubfolder)>1):
                     root.stageName = os.path.basename(stagesubfolder[1])
 
-    #Uhh let's not check if there's a dump of the stage in Arc atm
-    #print(root.arcDir + r"/export/stage/"+root.stageName)
-    #if (not os.path.isdir(root.arcDir + r"/export/stage/"+root.stageName)):
-    #    root.stageName = None
-
     if (root.stageName == None):
         messagebox.showerror(root.programName,"There is no valid stage within that stage folder!")
         root.destroy()
         sys.exit("Not a stage folder")
 
-    defaultGroundInfo = os.getcwd() + r"\groundconfig.prcxml"
-    root.TempGroundInfo = os.getcwd() + r"\tempconfig.prcxml"
-    f = open(root.TempGroundInfo, "w")
-    f.close()
-    #root.TempGroundInfo = shutil.copy(defaultGroundInfo,os.getcwd() + r"\tempconfig.prcxml")
-
-    tree = None
-    treeRoot = None
-    root.steveSideName = "cell_minlen_side"
-    root.steveTopName = "cell_minlen_top"
-    root.steveBottomName = "cell_minlen_bottom"
-    root.steveSideValue = 0
-    root.steveTopValue = 0
-    root.steveBottomValue = 0
-
-
-    #Parse Steve data from main groundconfig file and place it in a temporary file
-    with open(defaultGroundInfo, 'rb') as file:
-        parser = ET.XMLParser(encoding ='utf-8')
-        tree = ET.parse(file,parser)
-        treeRoot = tree.getroot()
-
-        #remove cell_size
-        for type_tag in treeRoot.findall('float'):
-            treeRoot.remove(type_tag)
-        #remove material_tabel
-        for type_tag in treeRoot.findall('list'):
-            treeRoot.remove(type_tag)
-        #remove everything that isn't this stage
-        for type_tag in treeRoot.findall('struct'):
-            nodeName = type_tag.get('hash')
-            if (nodeName != root.stageName):
-                treeRoot.remove(type_tag)
-            else:
-                for child in type_tag:
-                    childName = child.get("hash")
-
-                    if (childName == "cell_minilen_side"):
-                        root.steveSideValue = float(child.text)
-                    elif (childName == "cell_minilen_top"):
-                        root.steveTopValue = float(child.text)
-                    elif (childName == "cell_minilen_bottom"):
-                        root.steveBottomValue = float(child.text)
-        tree.write(root.TempGroundInfo)
-
     root.modParams = root.modDir + "/stage/"+root.stageName+"/normal/param/"
     print("Stage Loaded, stage params should be at "+root.modParams)
-    SetYaml(automatic=True)
 
-def exportGroundInfoLazy():
-    targetLocation = root.modDir + root.stageParamsFolderShortcut
-    shutil.copy(root.TempGroundInfo,targetLocation + r"\groundconfig.prcxml")
-    messagebox.showinfo(root.programName,"Exported Info to "+root.stageName)
-    webbrowser.open(targetLocation)
-
-def exportGroundInfo():
-    #Part one of parcel: patch the original file with our edited values
-    targetLocation = root.modDir + root.stageParamsFolderShortcut
-    if (not os.path.exists(targetLocation)):
-        os.makedirs(targetLocation)
-
-    tempPrc = os.getcwd() +"/temp.prc"
-    sourcePrc = root.stageParams + "/groundconfig.prc"
-    parcel = root.parcelDir + r"/parcel.exe"
-
-    subcall = [parcel,"patch",sourcePrc,root.TempGroundInfo,tempPrc]
-    with open('output.txt', 'a+') as stdout_file:
-        process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
-        print(process_output.__dict__)
-    print("Temp prc created!")
-
-    #Part two: patch our working folder, as well
-    workingPrc = os.getcwd() + "/groundconfig.prc"
-    subcall = [parcel,"patch",workingPrc,root.TempGroundInfo,workingPrc]
-    with open('output.txt', 'a+') as stdout_file:
-        process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
-        print(process_output.__dict__)
-
-    print("Working prc patched!")
-    #Part three: run parcel with the original and the patch to receive a prcx
-
-    subcall = [parcel,"diff",sourcePrc,tempPrc,targetLocation+"groundconfig.prcx"]
-    with open('output.txt', 'a+') as stdout_file:
-        process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
-        print(process_output.__dict__)
-
-    print("Prcx created!")
-
-    #Part four: copy the temp prcxml to the destination
-    os.remove(tempPrc)
-    shutil.copy(root.TempGroundInfo,targetLocation + r"groundconfig.prcxml")
-    messagebox.showinfo(root.programName,"Exported groundconfig info to "+root.stageName)
-    webbrowser.open(targetLocation)
-
-
-
-def Merge(dict1, dict2):
-    res = {**dict1, **dict2}
-    return res
-
-import fileinput
+def SetStageFromLVD():
+    print("uh oh")
 
 def FinishedCreateYaml():
     #create yaml by copying our sample
@@ -444,6 +374,8 @@ def CreateYaml():
     root.withdraw();
 
 def SetYaml(automatic=False):
+    originalYaml = root.yamlFile
+    root.yamlFile=""
     #Attempt to find automatically first, if valid directory file exists
     if (automatic and os.path.isdir(root.modParams)):
         if (root.yamlFile == ""):
@@ -457,42 +389,42 @@ def SetYaml(automatic=False):
                     #if (root.stageName in filename): #this checks if the filename contains the stage name, which might not always be the case
                     root.yamlFile = root.modParams +f
                     break
+
     if (root.yamlFile != ""):
         print(os.path.basename(root.yamlFile)+" was automatically retrieved")
     elif (root.yamlFile == "" or not automatic):
         #SetYaml manually. First select an lvd/yaml file
-        messagebox.showinfo(root.programName,"Select your yaml or lvd file for "+root.stageName)
-
-        
+        messagebox.showinfo(root.programName,"Select your stage collision file (usually found in stage/normal/params)")        
         filetypes = (
             ('All File Types', '*.yaml *lvd'),
             ('Yaml File', '*.yaml'),
             ('LVD File', '*lvd')
         )
-        desiredFile = filedialog.askopenfilename(title = "Search",filetypes=filetypes,initialdir = root.modDir)
+        desiredFile = filedialog.askopenfilename(title = "Search",filetypes=filetypes,initialdir = root.modParams)
 
         if (desiredFile == ""):
+            print("No lvd selected")
             #enter manually if rejected, and no current file
-            if (root.yamlFile == ""):
+            if (root.yamlFile == "" and originalYaml==""):
                 messagebox.showwarning(root.programName,"Let's manually create a yaml file then!")
                 CreateYaml()
-            #otherwise close window
+            #otherwise close window?
             else:
+                root.yamlFile=originalYaml
                 return
+            return
+
+        #If it's the same file, do nothing
+        if (desiredFile == originalYaml):
             return
 
         desiredFileName = os.path.basename(desiredFile)
         print(os.path.basename(root.modDir)+"/"+desiredFileName)
-        if (not Path(root.modDir) in Path(desiredFile).parents):
-            messagebox.showerror(root.programName,"Level file does not match current stage")
-            SetYaml(False)
-            return
-
-        #If level file does not contain current stage name, it could be from a different stage folder. Reject.
-        #if (not root.stageName in desiredFileName):
-        #    messagebox.showerror(root.programName,"Level file does not match current stage")
-        #    SetYaml(False)
-        #    return
+        if (root.modDir):
+            if (not Path(root.modDir) in Path(desiredFile).parents):
+                root.modDir=""
+                root.stageName=""
+                messagebox.showwarning(root.programName,"Level file does not match current stage; figuring out which stage is associated with this file")
 
         extension = os.path.splitext(desiredFileName)[1]
 
@@ -525,15 +457,105 @@ def SetYaml(automatic=False):
                 #enter manually
                 messagebox.showwarning(root.programName,"Yamlvd not compatible with this stage! Let's create a yaml file!")
                 CreateYaml()
-                return
+
+    root.collisions=[]
+    if (root.stageName==""):
+        SetStageFromLVD()  
+    ParseSteve()
+
+def ParseSteve():
+    root.steveSideValue = 0
+    root.steveTopValue = 0
+    root.steveBottomValue = 0
+
+    defaultGroundInfo = os.getcwd() + r"\groundconfig.prcxml"
+    root.TempGroundInfo = os.getcwd() + r"\tempconfig.prcxml"
+    f = open(root.TempGroundInfo, "w")
+    f.close()
+    #root.TempGroundInfo = shutil.copy(defaultGroundInfo,os.getcwd() + r"\tempconfig.prcxml")
+
+    tree = None
+    treeRoot = None
+
+
+    #Parse Steve data from main groundconfig file and place it in a temporary file
+    with open(defaultGroundInfo, 'rb') as file:
+        parser = ET.XMLParser(encoding ='utf-8')
+        tree = ET.parse(file,parser)
+        treeRoot = tree.getroot()
+
+        #remove cell_size
+        for type_tag in treeRoot.findall('float'):
+            treeRoot.remove(type_tag)
+        #remove material_tabel
+        for type_tag in treeRoot.findall('list'):
+            treeRoot.remove(type_tag)
+        #remove everything that isn't this stage
+        for type_tag in treeRoot.findall('struct'):
+            nodeName = type_tag.get('hash')
+            if (nodeName != root.stageName):
+                treeRoot.remove(type_tag)
+            else:
+                for child in type_tag:
+                    childName = child.get("hash")
+
+                    if (childName == "cell_minilen_side"):
+                        root.steveSideValue = float(child.text)
+                    elif (childName == "cell_minilen_top"):
+                        root.steveTopValue = float(child.text)
+                    elif (childName == "cell_minilen_bottom"):
+                        root.steveBottomValue = float(child.text)
+        tree.write(root.TempGroundInfo)
     Main()
 
-root.canvasWidth = 640
-root.canvasHeight = 480 #240
+def exportGroundInfoLazy():
+    targetLocation = root.modDir + root.stageParamsFolderShortcut
+    shutil.copy(root.TempGroundInfo,targetLocation + r"\groundconfig.prcxml")
+    messagebox.showinfo(root.programName,"Exported Info to "+root.stageName)
+    webbrowser.open(targetLocation)
+
+def exportGroundInfo():
+    #Part one of parcel: patch the original file with our edited values
+    targetLocation = root.modDir + root.stageParamsFolderShortcut
+    if (not os.path.exists(targetLocation)):
+        os.makedirs(targetLocation)
+
+    tempPrc = os.getcwd() +"/temp.prc"
+    sourcePrc = root.stageParams + "/groundconfig.prc"
+    parcel = root.parcelDir + r"/parcel.exe"
+
+    subcall = [parcel,"patch",sourcePrc,root.TempGroundInfo,tempPrc]
+    with open('output.txt', 'a+') as stdout_file:
+        process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+        print(process_output.__dict__)
+    print("Temp prc created!")
+
+    #Part two: patch our working folder, as well
+    workingPrc = os.getcwd() + "/groundconfig.prc"
+    subcall = [parcel,"patch",workingPrc,root.TempGroundInfo,workingPrc]
+    with open('output.txt', 'a+') as stdout_file:
+        process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+        print(process_output.__dict__)
+
+    print("Working prc patched!")
+    #Part three: run parcel with the original and the patch to receive a prcx
+
+    subcall = [parcel,"diff",sourcePrc,tempPrc,targetLocation+"groundconfig.prcx"]
+    with open('output.txt', 'a+') as stdout_file:
+        process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+        print(process_output.__dict__)
+
+    print("Prcx created!")
+
+    #Part four: copy the temp prcxml to the destination
+    os.remove(tempPrc)
+    shutil.copy(root.TempGroundInfo,targetLocation + r"groundconfig.prcxml")
+    messagebox.showinfo(root.programName,"Exported groundconfig info to "+root.stageName)
+    webbrowser.open(targetLocation)
 
 
 def OpenReadMe():
-    webbrowser.open('https://github.com/CSharpM7/SharpSmashSuite/tree/main/SteveSpec')
+    webbrowser.open('https://github.com/CSharpM7/SharpSmashSuite/tree/main/LvdSpec')
 def OpenWiki():
     webbrowser.open('https://github.com/CSharpM7/SharpSmashSuite/wiki')
 
@@ -565,7 +587,9 @@ def OnCanvasSettingUpdate(*args):
 
 
 
-#This should really only run once, maybe I should split this up but idc
+root.canvasWidth = 640
+root.canvasHeight = 480 
+#This should really only run once, maybe I should split this up but idk
 def CreateCanvas():
     #Define window stuff
     root.geometry("960x512")
@@ -583,7 +607,7 @@ def CreateCanvas():
     root.menubar = Menu(root)
     root.filemenu = Menu(root.menubar, tearoff=0)
     root.filemenu.add_command(label="Set Mod Folder", command=LoadMod)
-    root.filemenu.add_command(label="Set Yaml File", command=SetYaml)
+    root.filemenu.add_command(label="Load Stage Collision File", command=SetYaml)
     root.filemenu.add_command(label="Export Patch File To Mod", command=exportGroundInfo)
     root.filemenu.add_separator()
     root.filemenu.add_command(label="Exit", command=quit)
@@ -601,26 +625,26 @@ def CreateCanvas():
     root.fr_Settings.pack(padx=20,pady=20,fill = X,side=RIGHT,anchor=N)
 
     stageData = {
-    "Label1":"Steve Boundaries",
-    "1_Side":root.steveSideValue,
-    "1_Top":root.steveTopValue,
-    "1_Bottom":root.steveBottomValue,
-    "Label2":"Camera Boundaries",
-    "2_Left":root.cameraLeftValue,
-    "2_Right":root.cameraRightValue,
-    "2_Top":root.cameraTopValue,
-    "2_Bottom":root.cameraBottomValue,
-    "Label3":"Blastzone Boundaries",
-    "3_Left":root.blastLeftValue,
-    "3_Right":root.blastRightValue,
-    "3_Top":root.blastTopValue,
-    "3_Bottom":root.blastBottomValue,
-    "Label4":"Stage Data",
-    "4_Radius":root.stageRadius,
-    "4_Top":root.stageTop,
-    "4_Bottom": root.stageBottom,
-    "Label5":"Canvas Settings",
-    "5_Max Collisions To Display":root.maxCollisions
+    "Steve_Label":"Steve Boundaries",
+    "Steve_Side":root.steveSideValue,
+    "Steve_Top":root.steveTopValue,
+    "Steve_Bottom":root.steveBottomValue,
+    "Camera_Label":"Camera Boundaries",
+    "Camera_Left":root.cameraLeftValue,
+    "Camera_Right":root.cameraRightValue,
+    "Camera_Top":root.cameraTopValue,
+    "Camera_Bottom":root.cameraBottomValue,
+    "Blast_Label":"Blastzone Boundaries",
+    "Blast_Left":root.blastLeftValue,
+    "Blast_Right":root.blastRightValue,
+    "Blast_Top":root.blastTopValue,
+    "Blast_Bottom":root.blastBottomValue,
+    "Stage_Label":"Stage Data",
+    "Stage_Radius":root.stageRadius,
+    "Stage_Top":root.stageTop,
+    "Stage_Bottom": root.stageBottom,
+    "Canvas_Label":"Canvas Settings",
+    "Canvas_Max Collisions To Display":root.maxCollisions
     }
     root.stageData = {}
     for data in stageData:
@@ -631,7 +655,8 @@ def CreateCanvas():
             dataName = Label(dataFrame,text=stageData[data])
             dataName.pack(fill = BOTH)
             continue
-        dataText=re.sub(r'[^a-zA-Z ]', '', data)
+        dataText=re.sub(r'[^a-zA-Z _]', '', data)
+        dataText=dataText[dataText.index("_")+1:]
         dataDefault = truncate(str(stageData[data]),E,6)
 
         dataFrame = Frame(root.fr_Settings)
@@ -642,7 +667,7 @@ def CreateCanvas():
         dataName.pack(side = LEFT, fill = BOTH,anchor=E)
         dataEntry=None
         #For Steve Entries, trace any updates
-        if ("1_" in data or "5_" in data):
+        if ("Steve" in data or "Canvas" in data):
             root.string_vars.update({dataText:StringVar(name=dataText)})
             var = root.string_vars[dataText]
             if ("1_" in data):
@@ -676,6 +701,7 @@ def ParseYaml():
             root.destroy()
             sys.exit("Yaml exploded")
 
+    root.collisions=[]
     for i in root.yaml:
         #print(i)
         #Get Camera Info
@@ -731,6 +757,10 @@ def GetAdjustedCoordinates(x1=0,y1=0,x2=0,y2=0):
     return x1,y1,x2,y2
 
 def DrawSteveBlock():
+    if (root.modDir == ""):
+        root.my_canvas.coords(root.steveArea,-10,-10,-10,-10)
+        return
+
     xC = root.canvasWidth/2
     yC = root.canvasHeight/2
     x1 = root.cameraLeftValue+root.steveSideValue
@@ -766,8 +796,18 @@ def RefreshCanvas():
     DrawSteveBlock()
     DrawBoundaries()
     DrawCollisions()
+    disableSteve = "disable" if (root.modDir=="") else "normal"
+    for data in root.stageData:
+        if ("Steve" in data):
+            entry = root.stageData[data]
+            if (root.stageName==""):
+                entry.delete(0,END)
+                entry.insert(0,"?")
+            entry.configure(state = disableSteve)
+    root.filemenu.entryconfig("Export Patch File To Mod", state=disableSteve)
 
 def Main():
+    print("Running main")
     UpdateTitle(os.path.basename(root.modDir) +": "+os.path.basename(root.yamlFile))
     ParseYaml()
     if (root.FirstLoad):
