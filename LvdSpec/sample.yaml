@@ -1,0 +1,59 @@
+---
+collisions:
+  - entry:
+      name: COL_00_Ring
+      subname: 00_Ring
+    verts:
+      - x: RingL
+        y: StageBottom
+      - x: RingL
+        y: StageBaseY
+      - x: RingR
+        y: StageBaseY
+      - x: RingR
+        y: StageBottom
+      - x: RingL
+        y: StageBottom
+  - entry:
+      name: COL_00_Platform01_through
+      subname: 00_Platform01_through
+    verts:
+      - x: -17.5
+        y: StageTop
+      - x: 17.5
+        y: StageTop
+spawns:
+  - entry:
+      name: START_00_P01
+      subname: 00_P01
+      start_pos:
+        x: 0.0
+        y: StageTop
+        z: 0.0
+      use_start: false
+      unk: 0
+      unk2:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      unk3: 4294967295
+      bone_name: ""
+    pos:
+      x: 0.0
+      y: StageTop
+camera:
+  - entry:
+      name: CAMERA_00
+      subname: "00"
+    left: CameraLeft
+    right: CameraRight
+    top: CameraTop
+    bottom: CameraBottom
+blastzones:
+  - entry:
+      name: DEATH_00
+      subname: "00"
+    left: BlastLeft
+    right: BlastRight
+    top: BlastTop
+    bottom: BlastBottom
