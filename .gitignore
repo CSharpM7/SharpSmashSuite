@@ -176,9 +176,7 @@ LvdSpec/tempconfig.prcxml
 
 LvdSpec/temp.prc
 
-LvdSpec/TestMod/stage/battlefield/normal/param/
-
-LvdSpec/sample.yaml
+LvdSpec/TestMod/*
 
 LvdSpec/sample - Copy.yaml
 
@@ -187,3 +185,9 @@ LvdSpec/README.html
 LvdSpec/tempconfig.prcxml
 
 LvdSpec/EsnHcxrXAAEizec.jpg
+
+LvdSpec/TestMod/groundconfig.prc
+
+LvdSpec/EsnHcxjXIAA7ibb.jpg
+
+*.jpg
