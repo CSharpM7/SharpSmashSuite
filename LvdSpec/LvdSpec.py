@@ -208,21 +208,15 @@ with open('config.ini', 'w+') as configfile:
     config.write(configfile)
 
 root.stageName = ""
-root.steveSideValue = 0
-root.steveTopValue = 0
-root.steveBottomValue = 0
-root.steveOrginX=0
-root.steveOrginY=0
-root.steveSensitivity=0
-root.steveOffset=0
-root.steveMaterial="soil"
+root.stageLocation = ""
+
 root.steveTable={
     "Steve_Label":"Steve LVD Settings",
-    "Steve_material":root.steveMaterial,
-    "Steve_origin_x":root.steveOrginX,
-    "Steve_origin_y":root.steveOrginY,
-    "Steve_cell_sensitivity":root.steveSensitivity,
-    "Steve_line_offset":root.steveOffset,
+    "Steve_material":"soil",
+    "Steve_origin_x":0,
+    "Steve_origin_y":0,
+    "Steve_cell_sensitivity":0,
+    "Steve_line_offset":0,
     "Steve_cell_minilen_side":0,
     "Steve_cell_minilen_top":0,
     "Steve_cell_minilen_bottom":0
@@ -234,32 +228,19 @@ root.steveMaterials=[
 "ice",
 ]
 
-#GetData("Camera_Left")=-170
-#GetData("Camera_Right")=170
-#GetData("Camera_Top")=130
-#GetData("Camera_Bottom")=-80
-#GetData("Blast_Left")=-240
-#GetData("Blast_Right")=240
-#GetData("Blast_Top")=192
-#GetData("Blast_Bottom")=-140
-#GetData("Stage_Radius")=80
-#GetData("Stage_BaseY")=0
-#GetData("Stage_OriginX")=0
-#GetData("Stage_OriginY")=0
-#GetData("Stage_Top")=47.3
-#GetData("Stage_Bottom")=-40
 root.collisions=[]
-root.maxCollisionsTag="Collisions To Show"
-root.maxCollisions=50
+root.maxCollisionsTag="Canvas_Collisions To Show"
+#root.maxCollisions=50
 root.stageLimit=125
 
-
-root.stageDataTable = {
+root.stageDefaults ={
 "Camera_Label":"Camera Boundaries",
 "Camera_Left":-170,
 "Camera_Right":170,
 "Camera_Top":130,
 "Camera_Bottom":-80,
+"Camera_CenterX":0,
+"Camera_CenterY":0,
 "Blast_Label":"Blastzone Boundaries",
 "Blast_Left":-240,
 "Blast_Right":240,
@@ -269,14 +250,43 @@ root.stageDataTable = {
 "Stage_Radius":80,
 "Stage_Top":47,
 "Stage_Bottom":-40,
-"Stage_BaseY":0,
+"Stage_FloorY":0,
 "Stage_OriginX":0,
 "Stage_OriginY":0,
 "Canvas_Label":"Canvas Settings",
-"Canvas_"+root.maxCollisionsTag:root.maxCollisions
+""+root.maxCollisionsTag:50
 }
+
+root.stageDataTable = root.stageDefaults.copy()
+def ConvertSteveTag(data):
+    data = (data.lower()).replace("steve_","Steve_")
+    if ("top" in data):
+        data = "Steve_cell_minilen_top"
+    elif ("side" in data):
+        data = "Steve_cell_minilen_side"
+    elif ("bottom" in data):
+        data = "Steve_cell_minilen_bottom"
+    return data
+
 def GetData(data):
-    return root.stageDataTable[data]
+    if ("Steve" in data):
+        data = ConvertSteveTag(data)
+        return root.steveTable[data]
+    elif (data in root.stageDataTable):
+        return root.stageDataTable[data]
+    else:
+        return
+def SetData(data,value):
+    if ("Steve" in data):
+        data = ConvertSteveTag(data)
+        root.steveTable[data] = value
+    elif (data in root.stageDataTable):
+        root.stageDataTable[data] = value
+        if ("Camera" in data):
+            root.stageDataTable["Camera_CenterX"] = (GetData("Camera_Left")+GetData("Camera_Right"))/2
+            root.stageDataTable["Camera_CenterY"] = (GetData("Camera_Top")+GetData("Camera_Bottom"))/2
+    else:
+        print("Error: "+data+" key not found")
 
 root.levelFile = ""
 root.modParams = ""
@@ -298,15 +308,15 @@ def SetStageFromLVD():
     stageKey="/stage/"
     normalKey="/normal/"
     #We need to find whatever is in between stageKey and normalKey
-    stageLocation = root.levelFile[:root.levelFile.index(normalKey)]
-    root.stageName = stageLocation[stageLocation.index(stageKey)+len(stageKey):]
+    root.stageLocation = root.levelFile[:root.levelFile.index(normalKey)]
+    root.stageName = root.stageLocation[root.stageLocation.index(stageKey)+len(stageKey):]
     print("Stage:"+root.stageName)
     if (root.stageName == ""):
         messagebox.showerror(root.programName,"There is no valid stage within that stage folder!")
         return
-    root.modParams = stageLocation+"/normal/param/"
+    root.modParams = root.stageLocation+"/normal/param/"
+    root.modDir = root.levelFile[:root.levelFile.index(stageKey)]
     print("Stage Loaded, stage params should be at "+root.modParams)
-
 
 def SetStage(stageDir):
     print("Find stage at "+stageDir)
@@ -320,9 +330,6 @@ def SetStage(stageDir):
         return
         #root.destroy()
         #sys.exit("Not a stage folder")
-
-
-
 
 def FinishedCreateYaml():
     #create yaml by copying our sample
@@ -374,14 +381,14 @@ def CreateYaml():
     root.popupOptions = {}
     stageOptions = {
     "Label1":"Camera Settings",
-    "CameraLeft":GetData("Camera_Left"),"CameraRight":GetData("Camera_Right"),
-    "CameraTop":GetData("Camera_Top"),"CameraBottom":GetData("Camera_Bottom"),
+    "CameraLeft":root.stageDefaults["Camera_Left"],"CameraRight":root.stageDefaults["Camera_Right"],
+    "CameraTop":root.stageDefaults["Camera_Top"],"CameraBottom":root.stageDefaults["Camera_Bottom"],
     "Label2":"Blastzone Settings",
-    "BlastLeft":GetData("Blast_Left"),"BlastRight":GetData("Blast_Right"),
-    "BlastTop":GetData("Blast_Top"),"BlastBottom":GetData("Blast_Bottom"),
+    "BlastLeft":root.stageDefaults["Blast_Left"],"BlastRight":root.stageDefaults["Blast_Right"],
+    "BlastTop":root.stageDefaults["Blast_Top"],"BlastBottom":root.stageDefaults["Blast_Bottom"],
     "Label3":"Stage Settings",
-    "StageRadius":GetData("Stage_Radius"),"StageBaseY":GetData("Stage_BaseY"),
-    "StageTop":GetData("Stage_Top"),"StageBottom":GetData("Stage_Bottom")}
+    "StageRadius":root.stageDefaults["Stage_Radius"],"StageFloorY":root.stageDefaults["Stage_FloorY"],
+    "StageTop":root.stageDefaults["Stage_Top"],"StageBottom":root.stageDefaults["Stage_Bottom"]}
     for option in stageOptions:
         if ("Label" in option):
             optionFrame = Frame(root.fr_Options)
@@ -505,25 +512,56 @@ def LoadYaml():
             config.write(configfile)
     Main() 
 
-def ParseSteve():
-    root.steveSideValue = 0
-    root.steveTopValue = 0
-    root.steveBottomValue = 0
+
+def GetConfigFromYaml():
+    toReturn = root.modDir + root.stageParamsFolderShortcut + r"groundconfig_"
+    toReturn = toReturn+os.path.basename(root.levelFile).replace(".yaml","")
+    toReturn=toReturn+".prcxml"
+    return toReturn
+
+def ParseSteve(UseSource=False):
+    SetData("Steve_Side", 0)
+    SetData("Steve_Top",0)
+    SetData("Steve_Bottom", 0)
     if (root.stageName == ""):
         return
-
-    defaultGroundInfo = os.getcwd() + r"\groundconfig.prcxml"
-    root.TempGroundInfo = os.getcwd() + r"\tempconfig.prcxml"
-    f = open(root.TempGroundInfo, "w")
-    f.close()
-    #root.TempGroundInfo = shutil.copy(defaultGroundInfo,os.getcwd() + r"\tempconfig.prcxml")
-
     tree = None
     treeRoot = None
 
+    sourceGroundInfo = os.getcwd() + r"\groundconfig.prcxml"
+    if (not os.path.exists(sourceGroundInfo)):
+        messagebox.showerror(root.programName,"Source Groundconfig missing from this folder")
+        return
+    workingGroundInfo = GetConfigFromYaml()
+    print("Info:"+workingGroundInfo)
+    if (not UseSource):
+        if (not os.path.exists(workingGroundInfo)):
+            UseSource = True
+        else:
+            #Make sure the mod has our desired stage
+            hasStage = False
+            with open(workingGroundInfo, 'rb') as file:
+                parser = ET.XMLParser(encoding ='utf-8')
+                tree = ET.parse(file,parser)
+                treeRoot = tree.getroot()
+                for type_tag in treeRoot.findall('struct'):
+                    nodeName = type_tag.get('hash')
+                    if (nodeName != root.stageName):
+                        treeRoot.remove(type_tag)
+                    else:
+                        hasStage=True
+            UseSource = not hasStage
+            print("Current mod's groundconfig excludes the desired stage, using source instead")
+
+    root.TempGroundInfo = os.getcwd() + r"\tempconfig.prcxml"
+    f = open(root.TempGroundInfo, "w")
+    f.close()
+
+    GroundInfo = sourceGroundInfo if UseSource else workingGroundInfo
+
     print("Parsing Steve Data...")
     #Parse Steve data from main groundconfig file and place it in a temporary file
-    with open(defaultGroundInfo, 'rb') as file:
+    with open(GroundInfo, 'rb') as file:
         parser = ET.XMLParser(encoding ='utf-8')
         tree = ET.parse(file,parser)
         treeRoot = tree.getroot()
@@ -551,23 +589,42 @@ def ParseSteve():
         tree.write(root.TempGroundInfo)
     print("")
 
-def exportGroundInfoLazy():
-    #Shit
-    targetLocation = root.modDir + root.stageParamsFolderShortcut
-    shutil.copy(root.TempGroundInfo,targetLocation + r"\groundconfig.prcxml")
-    messagebox.showinfo(root.programName,"Exported Info to "+root.stageName)
-    webbrowser.open(targetLocation)
-
 def exportGroundInfo():
-    #shit
-    #Part one of parcel: patch the original file with our edited values
-    targetLocation = root.modDir + root.stageParamsFolderShortcut
-    if (not os.path.exists(targetLocation)):
-        os.makedirs(targetLocation)
-
     tempPrc = os.getcwd() +"/temp.prc"
-    sourcePrc = root.stageParams + "/groundconfig.prc"
+    sourcePrc = root.stageParams + "groundconfig.prc"
     parcel = root.parcelDir + r"/parcel.exe"
+
+    if (not os.path.exists(sourcePrc)):
+        messagebox.showerror(root.programName,"Cannot export without ArcExplorer's groundconfig.prc")
+        return
+    if (not os.path.exists(parcel)):
+        messagebox.showerror(root.programName,"Cannot export without Parcel")
+        return
+
+    tree = None
+    treeRoot = None
+
+    #Write our changes to TempGroundInfo
+    with open(root.TempGroundInfo, 'rb') as file:
+        parser = ET.XMLParser(encoding ='utf-8')
+        tree = ET.parse(file,parser)
+        treeRoot = tree.getroot()
+
+        for type_tag in treeRoot.findall('struct'):
+            nodeName = type_tag.get('hash')
+            if (nodeName != root.stageName):
+                treeRoot.remove(type_tag)
+            else:
+                for child in type_tag:
+                    childName = "Steve_"+child.get("hash")
+                    if (childName in list(root.steveTable.keys())):
+                        value = GetData(childName)
+                        print("Write:"+childName+":"+str(value))
+                        child.text = str(value)
+        tree.write(root.TempGroundInfo)
+
+
+    #Patch the source file with our edited values, and create a clone as TempPRC
 
     subcall = [parcel,"patch",sourcePrc,root.TempGroundInfo,tempPrc]
     with open('output.txt', 'a+') as stdout_file:
@@ -575,27 +632,41 @@ def exportGroundInfo():
         print(process_output.__dict__)
     print("Temp prc created!")
 
-    #Part two: patch our working folder, as well
+    #Patch our working folder's prc, as well
     workingPrc = os.getcwd() + "/groundconfig.prc"
-    subcall = [parcel,"patch",workingPrc,root.TempGroundInfo,workingPrc]
-    with open('output.txt', 'a+') as stdout_file:
-        process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
-        print(process_output.__dict__)
+    if (os.path.exists(workingPrc)):
+        subcall = [parcel,"patch",workingPrc,root.TempGroundInfo,workingPrc]
+        with open('output.txt', 'a+') as stdout_file:
+            process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
+            print(process_output.__dict__)
 
-    print("Working prc patched!")
-    #Part three: run parcel with the original and the patch to receive a prcx
+        print("Working prc patched!")
+        #Run parcel with the original and the patch to receive a prcx
+    else:
+        messagebox.showwarning(root.programName,"groundconfig.prc missing from LvdSpec")
 
-    subcall = [parcel,"diff",sourcePrc,tempPrc,targetLocation+"groundconfig.prcx"]
+    #Create Prcx for mod
+    targetLocation = root.modDir + root.stageParamsFolderShortcut
+    if (not os.path.exists(targetLocation)):
+        os.makedirs(targetLocation)
+    targetFile = GetConfigFromYaml()
+
+    subcall = [parcel,"diff",sourcePrc,tempPrc,targetFile]
     with open('output.txt', 'a+') as stdout_file:
         process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
         print(process_output.__dict__)
 
     print("Prcx created!")
 
-    #Part four: copy the temp prcxml to the destination
+    #Copy the temp prcxml to the destination
+    shutil.copy(root.TempGroundInfo,targetFile)
+
+    #Final part: remove temp and navigate to new folder
     os.remove(tempPrc)
-    shutil.copy(root.TempGroundInfo,targetLocation + r"groundconfig.prcxml")
-    messagebox.showinfo(root.programName,"Exported groundconfig info to "+root.stageName)
+    messagebox.showinfo(root.programName,"Exported steve parameters as "+os.path.basename(targetFile)+"!"
+        "\nMake sure you rename the file to 'groundconfig' in your mod file"
+        "\n"
+        "\nLVDSpec's groundconfig.prc has also been updated!")
     webbrowser.open(targetLocation)
 
 
@@ -605,22 +676,6 @@ def OpenWiki():
     webbrowser.open('https://github.com/CSharpM7/SharpSmashSuite/wiki')
 
 root.string_vars = {}
-
-reAlpha='[^0-9,.]-'
-def OnSteveSettingUpdated(*args):
-    if (root.Loading):
-        return
-    variable = "Steve_"+args[0]
-    #remove letters from string
-    value = root.string_vars[variable].get()
-    nums = re.findall(r'\d+',value)
-    if (len(nums)==0): return #if there are no numbers, return
-    value = re.sub(reAlpha, '', value)
-
-    value=float(value)
-    print("Updated "+variable+" with "+str(value))
-    root.steveTable.update({variable:value})
-    DrawSteveBlock()
 
 def OnSteveSliderUpdate(variable):
     if (root.Loading):
@@ -644,42 +699,62 @@ def OnSensitivitySliderUpdate(event):
     variable = "Steve_cell_sensitivity"
     OnSteveSliderUpdate(variable)
 
+reAlpha='[^0-9,.-]'
+def OnSettingUpdated(variable):
+    #Get Value, only take #s,- and .
+    value = root.string_vars[variable].get()
+    value = re.sub(reAlpha, '', value)
+    #If empty, return
+    if (value==""): return
+
+    #Make sure the value is a valid float
+    validValue=True
+    try:
+        value=float(value)
+    except:
+        validValue=False
+        print(value+" is invalid for "+variable)
+
+    if (not validValue): return
+    value=float(value)
+      
+    #Convert Collisions to int 
+    if (variable==root.maxCollisionsTag and value != ""):
+        value=int(value)
+    #Clamp Radius
+    elif ("Radius" in variable):
+        value=min(value,root.stageLimit)
+    #Clamp Steve Origins
+    elif ("Steve_origin" in variable):
+        value=clamp(value,-10,10)
+
+    print("Updated "+variable+" with "+str(value))
+    SetData(variable,value)
+
+    if ("Canvas" in variable):
+        DrawCollisions()
+    else:
+        DrawSteveBlock()
+        if ("Bottom" in variable):
+            DrawBoundaries()
+
+def OnSteveSettingUpdated(*args):
+    if (root.Loading):
+        return
+    variable = "Steve_"+args[0]
+    OnSettingUpdated(variable)
 
 def OnStageSettingUpdated(*args):
     if (root.Loading):
         return
     variable = "Stage_"+args[0]
-    #remove letters from string
-    value = root.string_vars[variable].get()
-    nums = re.findall(r'\d+',value)
-    if (len(nums)==0): return #if there are no numbers, return
-    value = re.sub(reAlpha, '', value)
-
-    value=float(value)
-    #Clamp Radius
-    if ("Radius" in variable):
-        min(value,root.stageLimit)
-    elif ("Origin" in variable):
-        clamp(value,-10,10)
-
-    print("Updated "+variable+" with "+str(value))
-    root.stageDataTable.update({variable:value})
-    DrawSteveBlock()
+    OnSettingUpdated(variable)
 
 def OnCanvasSettingUpdated(*args):
     if (root.Loading):
         return
     variable = "Canvas_"+args[0]
-    #remove letters from string
-    value = root.string_vars[variable].get()
-    nums = re.findall(r'\d+',value)
-    if (len(nums)==0): return #if there are no numbers, return
-    value = re.sub(reAlpha, '', value)
-    if (variable=="Canvas_"+root.maxCollisionsTag and value != ""):
-        root.maxCollisions=int(value)
-        print("Updated "+variable+" with "+str(value))
-        DrawCollisions()
-
+    OnSettingUpdated(variable)
 
 
 root.canvasWidth = 576
@@ -740,7 +815,7 @@ def CreateCanvas():
 
         dataText=re.sub(r'[^a-zA-Z _]', '', data)
         dataText=dataText[dataText.index("_")+1:]
-        dataDefault = truncate(str(dataTable[data]),E,6)
+        dataDefault = str(dataTable[data])
 
         dataFrame = Frame(frame)
         dataFrame.pack(fill = X,expand=1)
@@ -796,7 +871,18 @@ def CreateCanvas():
     #Wizard Button
     button = Button(root.fr_SteveSettings, text="Wizard", command=OnWizard)
     button.pack(side = RIGHT, fill = BOTH,expand=1,pady=10,padx=4)
+    #Default Button
+    button = Button(root.fr_SteveSettings, text="Reset Values To Default", command=OnDefault)
+    button.pack(side = RIGHT, fill = BOTH,expand=1,pady=10,padx=4)
 
+
+def OnDefault():
+    res = messagebox.askquestion("LVD Wizard: "+os.path.basename(root.levelFile), "Reset Steve parameters to their original values?")
+    if res != 'yes':
+        return
+    ParseSteve(True)
+    RefreshValues()
+    RefreshCanvas()
 def OnWizard():
     res = messagebox.askquestion("LVD Wizard: "+os.path.basename(root.levelFile), "Make sure you have all these variables set in Stage Data for this to work!"
         "\n"
@@ -810,7 +896,6 @@ def OnWizard():
     if res != 'yes':
         return
     isWall= (GetData("Stage_Bottom")<GetData("Camera_Bottom")+5)
-    print(isWall)
     #BF (plankable)
     #Side: Steve40,Cam170
     #Bottom: Steve30,Cam-80
@@ -838,24 +923,42 @@ def OnWizard():
     #BottomStage: -23.5
     #Radius: 83 (77 or 1.927)
 
-    #SteveTop could be CamTop-StageTop/2
-    #SteveSide seems to be (CamSide-Radius)/2 where Radius is shifted by OriginX
+    #Origin should do something with radius, maybe?
+    cameraCenter = GetData("Camera_CenterX")
+    desiredOriginX= (cameraCenter % 10) + (round(GetData("Stage_Radius"),1) % 10)
+    desiredOriginY=GetData("Stage_FloorY") % 10
+
     #SteveBottom seems to be CamBottom-StageBase
-    desiredBottom = GetData("Camera_Bottom")-GetData("Stage_Bottom")+20
+    desiredBottom = GetData("Camera_Bottom")-GetData("Stage_Bottom")
     if (isWall):
         stageMiddle=abs(GetData("Stage_OriginY")-GetData("Camera_Bottom"))/2
         desiredBottom=stageMiddle-10
     desiredBottom=abs(round(desiredBottom))
-    desiredSide = (GetData("Camera_Right")-(GetData("Stage_Radius")+GetData("Stage_OriginX")))/2
-    desiredSide=math.floor(desiredSide-5)
-    desiredTop=math.floor((GetData("Camera_Top")-GetData("Stage_Top"))/2)
 
-    #Origin should do something with radius, maybe?
-    stageCenter = (GetData("Camera_Left")+GetData("Camera_Right"))/2
-    desiredOriginX= stageCenter % 10
-    desiredOriginY=GetData("Stage_BaseY") % 10
-    print(str((desiredOriginX)))
+    #SteveSide seems to be (CamSide-Radius)/2 where Radius is shifted by OriginX
+    desiredSide = ((GetData("Camera_Right")-(GetData("Stage_Radius")+GetData("Stage_OriginX")))/2)-GetData("Stage_OriginX")
+    desiredSide=math.floor(desiredSide)
 
+    #Buffer between TopPlat's position and the highest block
+    TopBuffer=20
+    #For TopFromBase, we'll take the median of CameraTop and the base of the stage
+    TopFromBase=math.floor((GetData("Camera_Top")-GetData("Stage_FloorY"))/2)
+    #For TopPlat, we'll take Stage_Top to the nearest 10, offset it by originY
+    TopPlat = (math.ceil(GetData("Stage_Top")/10)*10)+desiredOriginY
+    TopFromPlat=math.floor((GetData("Camera_Top")-TopPlat-TopBuffer))
+    print("Base:"+str(TopFromBase)+" Plat:"+str(TopFromPlat))
+    print("")
+    #Pick whichever is the smallest amount
+    desiredTop=min(TopFromBase,TopFromPlat)
+
+
+    SetData("Steve_Top",desiredTop)
+    SetData("Steve_Side",desiredSide)
+    SetData("Steve_Bottom",desiredBottom)
+    SetData("Steve_origin_x",desiredOriginX)
+    SetData("Steve_origin_Y",desiredOriginY)
+    RefreshValues()
+    messagebox.showinfo(root.programName,"Steve parameters automatically set!")
 
 
 #Load info from yaml into our canvas
@@ -895,34 +998,34 @@ def ParseYaml():
                 for s in root.yaml[i]:
                     pos_y = s["pos"]["y"]
                     spawns.append(float(pos_y))
+
         #Parse stage data
         largestX=0
         originX=(cameraLeftValue+cameraRightValue)/2
         originY=(cameraTopValue+cameraBottomValue)/2
-        highestY=-10 if (len(spawns)>0) else originY
+        highestSpawn=-100 if (len(spawns)>0) else originY
+        lowestSpawn=100 if (len(spawns)>0) else originY
         lowestY=0
-        baseY=-900 
         for s in spawns:
-            if (s>highestY):
-                highestY=s
+            if (s>highestSpawn):
+                highestSpawn=s
+            elif (s<lowestSpawn):
+                lowestSpawn=s
 
         for c in root.collisions:
             for vert in range(len(c)-1):
                 x1=float(c[vert]["x"])
                 y1=float(c[vert]["y"])
-                #Make sure largestX is in between camera boundaries
+                #Make sure largestX and lowestY is in between camera boundaries
                 if (x1>largestX and cameraLeftValue<x1 and x1<cameraRightValue):
                     largestX=x1
-                    if (y1>baseY):
-                        sign =math.copysign(1, y1)
-                        baseY=sign*math.floor(abs(y1))
-                elif (y1<lowestY):
+                if (y1<lowestY and cameraBottomValue<y1 and y1<cameraTopValue):
                     lowestY=y1
         stageRadius=min(largestX,root.stageLimit)
-        stageBaseY= baseY
+        stageTop=highestSpawn
+        stageFloorY= lowestSpawn
         stageOriginX= math.floor(originX/100)*100
         stageOriginY= math.floor(originY/100)*100
-        stageTop=highestY
         stageBottom=lowestY
 
     stageDataTableUpdates={
@@ -935,88 +1038,111 @@ def ParseYaml():
     "Blast_Top":blastTopValue,
     "Blast_Bottom":blastBottomValue,
     "Stage_Radius":stageRadius,
-    "Stage_BaseY":stageBaseY,
+    "Stage_FloorY":stageFloorY,
     "Stage_Top":stageTop,
     "Stage_Bottom": stageBottom,
     "Stage_OriginX":stageOriginX,
     "Stage_OriginY":stageOriginY,
     }
     for d in stageDataTableUpdates:
-        root.stageDataTable.update({d:stageDataTableUpdates[d]})
+        SetData(d,stageDataTableUpdates[d])
 
 
 root.my_canvas = None
 
-def GetAdjustedCoordinates(x1=0,y1=0,x2=0,y2=0):
+def GetAdjustedCoordinates(x=0,y=0):
     #Center Of Canvas
     xC = root.canvasWidth/2
     yC = root.canvasHeight/2
     #Offset, center of camera boundaries
-    xO = (GetData("Camera_Left")+GetData("Camera_Right"))/2
-    yO = (GetData("Camera_Top")+GetData("Camera_Bottom"))/2
+    xO = GetData("Camera_CenterX")
+    yO = GetData("Camera_CenterY")
     #Coordinates
-    x1=x1+xC+xO
-    y1=(-y1)+yC+yO
-    x2=x2+xC+xO
-    y2=(-y2)+yC+yO
+    if (x!=None):
+        x=x+xC+xO
+    if (y!=None):
+        y=(-y)+yC+yO
 
-    return x1,y1,x2,y2
+    #I really should learn how to return dynamic variable lengths
+    if (x==None):
+        return y
+    elif (y==None):
+        return x
+    else:
+        return x,y
+
 
 def DrawSteveBlock():
     if (root.stageName == ""):
         root.my_canvas.coords(root.steveArea,-10,-10,-10,-10)
         return
 
-    side=root.steveTable["Steve_cell_minilen_side"]
-    top=root.steveTable["Steve_cell_minilen_top"]
-    bottom=root.steveTable["Steve_cell_minilen_bottom"]
+    side=GetData("Steve_Side")
+    top=GetData("Steve_Top")
+    bottom=GetData("Steve_Bottom")
     xC = root.canvasWidth/2
     yC = root.canvasHeight/2
     x1 = GetData("Camera_Left")+side
     x2 = GetData("Camera_Right")-side
     y1 = GetData("Camera_Top")-top
     y2 = GetData("Camera_Bottom")+bottom
-    if (y2>y1 and bottom>top):
-        y2=y1
-    elif(y1<y2 and top>bottom):
-        y1=y2
-    x1,y1,x2,y2 = GetAdjustedCoordinates(x1,y1,x2,y2)
+    camCX = GetData("Camera_CenterX")
+    camCY = GetData("Camera_CenterY")
+    if (x1>camCX):
+        x1=camCX
+    if(x2<camCX):
+        x2=camCX
+    if (y1<camCY):
+        y1=camCY
+    if(y2>camCY):
+        y2=camCY
+    x1,y1 = GetAdjustedCoordinates(x1,y1)
+    x2,y2 = GetAdjustedCoordinates(x2,y2)
     root.my_canvas.coords(root.steveArea,x1,y1,x2,y2)
 
     #Create Grid for Steveblock
     root.my_canvas.delete('grid_line')
 
-    xO=float(root.steveTable["Steve_origin_x"])+GetData("Stage_OriginX")
-    yO=float(root.steveTable["Steve_origin_y"])+GetData("Stage_OriginY")
-    xO,yO,xO2,yO2 = GetAdjustedCoordinates(xO,yO,0,0)
-    print(str(xO)+":"+str(yO))
+    xO=float(GetData("Steve_origin_x"))+GetData("Stage_OriginX")
+    yO=float(GetData("Steve_origin_y"))+GetData("Stage_OriginY")
+    xO,yO = GetAdjustedCoordinates(xO,yO)
     maxX=int(GetData("Stage_Radius"))+10
     minY=-20
     maxY=20
     #Vertical Lines
     for i in range(-maxX,maxX+1,10):
-        #yO2-30,y02+15
         root.my_canvas.create_line([(xO+i, yO-maxY), (xO+i, yO-minY)], tag='grid_line',fill='dark green')
     #Horizontal Lines
     for i in range(minY,maxY+1,10):
         root.my_canvas.create_line([(xO-maxX, yO-i), (xO+maxX, yO-i)], tag='grid_line',fill='dark green')
 
+
 def DrawBoundaries():
-    x1,y1,x2,y2 = GetAdjustedCoordinates(GetData("Camera_Left"),GetData("Camera_Top"),GetData("Camera_Right"),GetData("Camera_Bottom"))
+    x1,y1 = GetAdjustedCoordinates(GetData("Camera_Left"),GetData("Camera_Top"))
+    x2,y2 = GetAdjustedCoordinates(GetData("Camera_Right"),GetData("Camera_Bottom"))
     root.my_canvas.coords(root.cameraArea,x1,y1,x2,y2)
-    x1,y1,x2,y2 = GetAdjustedCoordinates(GetData("Blast_Left"),GetData("Blast_Top"),GetData("Blast_Right"),GetData("Blast_Bottom"))
+
+    #Draw guidelines for stuff
+    root.my_canvas.delete('guide_line')
+    stageBottom = GetData("Stage_Bottom")
+    empty,stageBottom = GetAdjustedCoordinates(0,stageBottom)
+    root.my_canvas.create_line([(x1, stageBottom), (x2,stageBottom)], tag='guide_line',fill='black')
+
+    x1,y1 = GetAdjustedCoordinates(GetData("Blast_Left"),GetData("Blast_Top"))
+    x2,y2 = GetAdjustedCoordinates(GetData("Blast_Right"),GetData("Blast_Bottom"))
     root.my_canvas.coords(root.blastArea,x1,y1,x2,y2)
 
 def DrawCollisions():
     root.my_canvas.delete("collision")
-    for c in range(min(len(root.collisions),root.maxCollisions)):
+    for c in range(min(len(root.collisions),GetData(root.maxCollisionsTag))):
         col = root.collisions[c]
         for vert in range(len(col)-1):
             x1=float(col[vert]["x"])
             y1=float(col[vert]["y"])
             x2=float(col[vert+1]["x"])
             y2=float(col[vert+1]["y"])
-            x1,y1,x2,y2 = GetAdjustedCoordinates(x1,y1,x2,y2)
+            x1,y1 = GetAdjustedCoordinates(x1,y1)
+            x2,y2 = GetAdjustedCoordinates(x2,y2)
             root.my_canvas.create_line(x1,y1,x2,y2, fill = "black",width=2,tags="collision")
 
 #If yaml file is reloaded, then you should call this
@@ -1027,12 +1153,12 @@ def RefreshCanvas():
 
 def RefreshValues():
     print("Refreshing for "+root.stageName)
-    disableSteve = "disable" if (root.stageName=="") else "normal"
+    disableSteve = "disable" if (root.stageLocation=="") else "normal"
     for data in root.stageData:
         entry = root.stageData[data]
+        value =str(GetData(data))
         if ("Steve" in data):
             entry.configure(state = "normal")
-            value = root.steveTable[data]
             if ("sensitivity" in data or "line" in data or "Xorigin" in data):
                 entry.set(value)
             else:
@@ -1047,7 +1173,6 @@ def RefreshValues():
             else:
                 entry.configure(state = disableSteve)
         else:
-            value = root.stageDataTable[data]
             entry.configure(state = "normal")
             entry.delete(0,END)
             entry.insert(0,value)
@@ -1060,7 +1185,7 @@ def RefreshValues():
 def Main():
     print("Running main: "+root.stageName)
     if (root.stageName!="" and os.path.exists(root.levelFile)):
-        UpdateTitle(os.path.basename(root.stageName) +": "+os.path.basename(root.levelFile))
+        UpdateTitle(root.stageName +": "+os.path.basename(root.levelFile))
 
     ParseSteve()
     ParseYaml()
