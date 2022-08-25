@@ -107,6 +107,11 @@ with open('config.ini', 'w+') as configfile:
 
 #Set Destination Dir
 root.destinationDir = ""
+#Get or Set root.destinationDir
+if (root.destinationDir == ""):
+    setDestinationDir()
+
+
 root.modSkins = []
 
 def GetModSkins():
@@ -133,11 +138,7 @@ def GetModSkins():
         root.modSkins.append(skinName)
 
     
-#Get or Set root.destinationDir
-if (root.destinationDir == ""):
-    setDestinationDir()
 
-root.fighterUINames = [0,1,2,3,4,6]
 def combUIFolder(target,uiArray,folderUI):
     modType = "chara" if root.modType=="fighter" else "stage"
     ui_Folder = root.arcDir + r"/export/ui/" + folderUI + r"/"+modType
@@ -180,6 +181,7 @@ def getUI(quitOnFail=False):
     if (len(uiArray)==0):
         if (quitOnFail==False):
             print("Could not find UI for "+root.modName+", searching manually")
+            manualUI()
             return
         else:
             messagebox.showinfo(root.title(),"Could not find UI for that "+root.modType)
@@ -234,29 +236,21 @@ def getUI(quitOnFail=False):
 
 
 
-root.modName = ""
-subfolders = [f.path for f in os.scandir(root.destinationDir) if f.is_dir()]
-for dirname in list(subfolders):
-    if (os.path.basename(dirname) == "stage"):
-        modsubfolder = [s.path for s in os.scandir(dirname) if s.is_dir()]
-        root.modName = os.path.basename(modsubfolder[0])
-        if (root.modName == "common" and len(modsubfolder)>1):
-            root.modName = os.path.basename(modsubfolder[1])
-    elif (os.path.basename(dirname) == "fighter"):
-        modsubfolder = [s.path for s in os.scandir(dirname) if s.is_dir()]
-        root.modName = os.path.basename(modsubfolder[0])
-        if (root.modName == "common" and len(modsubfolder)>1):
-            root.modName = os.path.basename(modsubfolder[1])
+def GetModName():
+    subfolders = [f.path for f in os.scandir(root.destinationDir) if f.is_dir()]
+    for dirname in list(subfolders):
+        if (os.path.basename(dirname) == root.modType):
+            modsubfolder = [s.path for s in os.scandir(dirname) if s.is_dir()]
+            desiredName = os.path.basename(modsubfolder[0])
+            if (desiredName == "common" and len(modsubfolder)>1):
+                return os.path.basename(modsubfolder[1])
+            else:
+                return desiredName
+    return ""
 
-print ("Selected mod: "+root.modName )
-if (root.modType == "fighter"):
-    GetModSkins()
-if (root.modName!=""):
-    getUI()
-    #GetUI exists system on completion
 
 #Create UI for manually if no stage/fighter name was found
-def manualUI():
+def manualUIFinished():
     root.modName = root.e.get()
     root.withdraw()
     if (root.modName==None or root.modName == ""):
@@ -264,16 +258,28 @@ def manualUI():
         sys.exit("no input")
     getUI(True)
 
-messagebox.showinfo(root.title(),"Could not find "+root.modType+" associated with this mod, please type in the "+root.modType+" name manually on the next window")
-root.deiconify()
-root.label = Label(root, text="Type in the name of the "+root.modType+" you want to destination (ie ridley,battlefield_s,etc)", anchor=N)
-root.label.pack(side = TOP)
-root.e = Entry(root,width =50)
-root.e.pack()
-root.e.focus_set()
-b = Button(root, text = "OK", width = 10, command = manualUI)
-b.pack()
-
-mainloop()
+def manualUI():
+    messagebox.showinfo(root.title(),"Could not find "+root.modType+" associated with this mod, please type in the "+root.modType+" name manually on the next window")
+    root.deiconify()
+    root.label = Label(root, text="Type in the name of the "+root.modType+" you want to destination (ie ridley,battlefield_s,etc)", anchor=N)
+    root.label.pack(side = TOP)
+    root.e = Entry(root,width =50)
+    root.e.pack()
+    root.e.focus_set()
+    b = Button(root, text = "OK", width = 10, command = manualUIFinished)
+    b.pack()
 
     
+def Main():
+    root.modName = GetModName()
+    print ("Selected mod: "+root.modName )
+    if (root.modType == "fighter"):
+        GetModSkins()
+
+    if (root.modName!=""):
+        getUI()
+    else:
+        manualUI()
+
+Main()
+root.mainloop()
