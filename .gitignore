@@ -4,6 +4,31 @@ img2nutexb.exe
 *.ps1
 *.ini
 
+#NumatbGUI
+NumatbGUI/New folder/
+NumatbGUI/New folder (2)/
+NumatbGUI/New folder (3)/Cross/crossmod_test.numatb
+NumatbGUI/New folder (3)/Cross/crossmod_test.numatb.bk
+NumatbGUI/New folder (3)/Cross/crossmod.numatb
+NumatbGUI/New folder (3)/crossmod_out_out.numatb
+NumatbGUI/New folder (3)/crossmod_out.xml
+NumatbGUI/New folder (3)/lazymat_out_out.numatb
+NumatbGUI/New folder (3)/lazymat_out.xml
+NumatbGUI/New folder (3)/lazymat.numatb
+NumatbGUI/NumatbGUI - Copy.py
+NumatbGUI/presets.xml
+NumatbGUI/presets.numatb.bk
+
+#Numdlb
+LazyNumdlb/model.numdlb
+LazyNumdlb/model_old.numdlb
+
+#LazyMat
+LazyMat/presets.xml
+
+
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -136,60 +161,3 @@ dmypy.json
 
 *.db
 
-NumatbGUI/New folder/
-
-NumatbGUI/New folder (2)/
-
-NumatbGUI/New folder (3)/Cross/crossmod_test.numatb
-
-NumatbGUI/New folder (3)/Cross/crossmod_test.numatb.bk
-
-NumatbGUI/New folder (3)/Cross/crossmod.numatb
-
-NumatbGUI/New folder (3)/crossmod_out_out.numatb
-
-NumatbGUI/New folder (3)/crossmod_out.xml
-
-NumatbGUI/New folder (3)/lazymat_out_out.numatb
-
-NumatbGUI/New folder (3)/lazymat_out.xml
-
-NumatbGUI/New folder (3)/lazymat.numatb
-
-NumatbGUI/NumatbGUI - Copy.py
-
-NumatbGUI/presets.xml
-
-NumatbGUI/presets.numatb.bk
-
-LazyNumdlb/model.numdlb
-
-LazyNumdlb/model_old.numdlb
-
-LazyMat/presets.xml
-
-LvdSpec/Capture.PNG
-
-LvdSpec/Capture2.PNG
-
-LvdSpec/tempconfig.prcxml
-
-LvdSpec/temp.prc
-
-LvdSpec/TestMod/*
-
-LvdSpec/sample - Copy.yaml
-
-LvdSpec/README.html
-
-LvdSpec/tempconfig.prcxml
-
-LvdSpec/EsnHcxrXAAEizec.jpg
-
-LvdSpec/TestMod/groundconfig.prc
-
-LvdSpec/EsnHcxjXIAA7ibb.jpg
-
-*.jpg
-
-LvdSpec/groundconfig.prc
