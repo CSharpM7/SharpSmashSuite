@@ -20,11 +20,6 @@ Python 3.9+
 
 Grab from the latest [releases](https://github.com/CSharpM7/SharpSmashSuite/releases)
 
-The following applications are updated in the github repo, but not added to a current release. Please download from the source code via Code > Download ZIP.
-- LazyConfig: Now works for fighters
-- NumatbGUI: Lets you edit numatb files and save preset materials. This was to replace what CrossMod couldn't do, but now ssbh_editor has these features
-- UI Retrieve: New script for retrieving UI for stage mods (maybe fighters too later)
-
 ### Modding compatibility
 
 | | Stage Modding | Character Modding |
@@ -35,7 +30,7 @@ The following applications are updated in the github repo, but not added to a cu
 | LazyNumdlb | :heavy_check_mark: | :question: |
 | img2nutexbGUI | :heavy_check_mark: | :heavy_check_mark: |
 | NumatbGUI | :heavy_check_mark: | :heavy_check_mark: |
-| UI Retrieve | :heavy_check_mark: | :x: |
+| UI Retrieve | :heavy_check_mark: | :heavy_check_mark: |
 
 ## Getting Started
 
@@ -56,6 +51,7 @@ Our end goal is to be able to quickly prototype stage designs through the use of
 5.  LazyNumdlb - Reassigns meshs' their material label based on that mesh's name. This only works if Blender SSS was used on the mesh
 6.  CrossMod - After using LazyMat, LazyNumdlb, and StudioSB,  preview the model
 7.  LazyConfig - Creates a config.json to be used with file addition
+8.  UI Retrieve - Easily retrieves all relevant UI for your mod so you can replace it when finished
 
 # Special Thanks
 
