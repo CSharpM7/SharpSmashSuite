@@ -463,6 +463,10 @@ def SetYaml(automatic=False):
         #If it's the same file, do nothing
         if (desiredFile == originalYaml):
             return
+        #If accidentally selected the Yaml version instead of the lvd verison, select yaml instead
+        possibleYaml = desiredFile.replace(".lvd",".yaml")
+        if (os.path.exists(possibleYaml)):
+            desiredFile=possibleYaml
 
         desiredFileName = os.path.basename(desiredFile)
         extension = os.path.splitext(desiredFileName)[1]
@@ -651,7 +655,7 @@ def exportGroundInfo():
         os.makedirs(targetLocation)
     targetFile = GetConfigFromYaml()
 
-    subcall = [parcel,"diff",sourcePrc,tempPrc,targetFile]
+    subcall = [parcel,"diff",sourcePrc,tempPrc,targetFile.replace(".prcxml",".prcx")]
     with open('output.txt', 'a+') as stdout_file:
         process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
         print(process_output.__dict__)
@@ -1180,7 +1184,7 @@ def RefreshValues():
                 entry.configure(state = disableSteve)
             else:
                 entry.configure(state = "disable")
-    root.filemenu.entryconfig("Export Patch File To Mod", state=disableSteve)
+    root.filemenu.entryconfig("Export Patch File", state=disableSteve)
 
 def Main():
     print("Running main: "+root.stageName)
