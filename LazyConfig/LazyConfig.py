@@ -6,6 +6,7 @@ from tkinter import filedialog
 from tkinter import messagebox
 import glob
 import sys
+import webbrowser
 
 import configparser
 config = configparser.ConfigParser()
@@ -240,7 +241,6 @@ with open(writeLocation, 'w', encoding='utf-8') as f:
     
 messagebox.showinfo(root.title(),"Config.json created at: "+root.searchDir)
 #open folder
-import webbrowser
 webbrowser.open(root.searchDir)
 
 #quit

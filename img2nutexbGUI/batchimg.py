@@ -343,9 +343,10 @@ def run():
         shutil.copy(blankFile,newNutexb)
 
         printAndWrite("Converting "+os.path.basename(targetFile))
+        internalName = os.path.splitext(os.path.basename(targetFile))[0]
         
         #run program on it depending on if the text file ends in dds
-        subcall = [imgnutexbLocation,"-n "+split_tup[0],targetFile,newNutexb]
+        subcall = [imgnutexbLocation,"-n "+internalName,targetFile,newNutexb]
         convertedDDS = ""
         if (split_tup[1] == ".dds"):
             if (useDDSPrompt):

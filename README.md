@@ -27,7 +27,7 @@ Grab from the latest [releases](https://github.com/CSharpM7/SharpSmashSuite/rele
 | Blender SSS | :heavy_check_mark: | :question: |
 | LazyMat | :heavy_check_mark: | :question: |
 | LazyConfig | :heavy_check_mark: | :heavy_check_mark: |
-| LazyNumdlb | :heavy_check_mark: | :question: |
+| MagicModel | :heavy_check_mark: | :question: |
 | img2nutexbGUI | :heavy_check_mark: | :heavy_check_mark: |
 | NumatbGUI | :heavy_check_mark: | :heavy_check_mark: |
 | UI Retrieve | :heavy_check_mark: | :heavy_check_mark: |
@@ -47,9 +47,9 @@ Our end goal is to be able to quickly prototype stage designs through the use of
 1.  Blender SSS - Prepare your models. This blender program can properly separate objects by material, group objects by material without losing UV maps, rename meshes to their material's name, and export a list of material and texture names
 2.  LazyMat - Create a numatb file. You'll use the exported material list to fill this out. This can be customized to keep a list of shaders.
 3.  Img2nutexbGUI - Convert several images at once to nutexb files
-4.  StudioSB - Import your meshes from Blender, export a numdlb file
-5.  LazyNumdlb - Reassigns meshs' their material label based on that mesh's name. This only works if Blender SSS was used on the mesh
-6.  CrossMod - After using LazyMat, LazyNumdlb, and StudioSB,  preview the model
+4.  StudioSB - Import your meshes from Blender, export a numdlb and numshb file
+5.  MagicModel - Reassigns meshs' their material label based on that mesh's name, and alphabetically sorts mesh and material files. This only works if Blender SSS was used on the mesh.
+6.  CrossMod - After using LazyMat, LazyNumdlb, and StudioSB, preview the model
 7.  LazyConfig - Creates a config.json to be used with file addition
 8.  UI Retrieve - Easily retrieves all relevant UI for your mod so you can replace it when finished
 
