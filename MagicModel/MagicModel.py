@@ -64,7 +64,6 @@ def SortByLabel(e):
 
 if (root.hasMesh):
     mesh = ssbh_data_py.mesh_data.read_mesh(root.destinationDir+"/model.numshb")
-    mesh.save("model_old.numshb")
     mesh.objects.sort(key=SortByName)
     mesh.save(root.destinationDir+"/model.numshb")
     FinishMessage+="\n Meshes have been sorted alphabetically"
