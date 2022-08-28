@@ -20,6 +20,10 @@ Python 3.9+
 
 Grab from the latest [releases](https://github.com/CSharpM7/SharpSmashSuite/releases)
 
+The following programs have been updated in the source code, but not the current release:
+
+- Magic Model (LazyNumdlb): Now alphabetically sorts meshes and materials. No longer requires a copy of a .numdlb to be present in the folder, but instead will prompt the user to select a folder that contains the model,mesh and material files
+
 ### Modding compatibility
 
 | | Stage Modding | Character Modding |
