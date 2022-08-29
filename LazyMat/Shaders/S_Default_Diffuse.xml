@@ -1,9 +1,9 @@
-<material name="SFX_PBS_0000000001048240_opaque" label="S_Default_Diffuse">
+<material name="SFX_PBS_000000000109c240_far" label="S_Default_Diffuse (Gaur Sand)">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
         <Unk2>0</Unk2>
-        <DestinationColor>Zero</DestinationColor>
+        <DestinationColor>OneMinusSourceAlpha</DestinationColor>
         <Unk4>1</Unk4>
         <Unk5>0</Unk5>
         <Unk6>0</Unk6>
@@ -76,7 +76,7 @@
     </param>
     <param name="Texture0">
       <string>
-        <Text>/common/shader/sfxPBS/default_White</Text>
+        <Text>xeno_sand_01_col</Text>
       </string>
     </param>
   </material>

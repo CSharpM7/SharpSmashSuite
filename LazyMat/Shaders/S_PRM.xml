@@ -1,4 +1,4 @@
-<material name="SFX_PBS_00000080090a8249_opaque" label="S_PRM">
+<material name="SFX_PBS_0000008009080248_opaque" label="S_Default_PRM (Town RingMetal)">
     <param name="BlendState0">
       <blend_state>
         <SourceColor>One</SourceColor>
@@ -18,26 +18,12 @@
     <param name="CustomBoolean1">
       <bool>false</bool>
     </param>
-    <param name="CustomBoolean3">
-      <bool>true</bool>
-    </param>
-    <param name="CustomBoolean4">
-      <bool>true</bool>
-    </param>
     <param name="CustomVector13">
       <vector4>
-        <X>0.99</X>
-        <Y>0.99</Y>
-        <Z>0.99</Z>
-        <W>1</W>
-      </vector4>
-    </param>
-    <param name="CustomVector27">
-      <vector4>
         <X>1</X>
-        <Y>0</Y>
-        <Z>0</Z>
-        <W>0</W>
+        <Y>1</Y>
+        <Z>1</Z>
+        <W>0.5</W>
       </vector4>
     </param>
     <param name="CustomVector8">
@@ -76,7 +62,7 @@
         </BorderColor>
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
-        <LodBias>-1</LodBias>
+        <LodBias>0</LodBias>
         <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
@@ -96,7 +82,7 @@
         </BorderColor>
         <Unk11>0</Unk11>
         <Unk12>2139095022</Unk12>
-        <LodBias>-1</LodBias>
+        <LodBias>0</LodBias>
         <MaxAnisotropy>1</MaxAnisotropy>
       </sampler>
     </param>
@@ -142,12 +128,7 @@
     </param>
     <param name="Texture0">
       <string>
-        <Text>/common/shader/sfxPBS/default_Gray</Text>
-      </string>
-    </param>
-    <param name="Texture3">
-      <string>
-        <Text>/common/shader/sfxPBS/default_White</Text>
+        <Text>ac_metal00_col</Text>
       </string>
     </param>
     <param name="Texture4">
@@ -157,7 +138,7 @@
     </param>
     <param name="Texture6">
       <string>
-        <Text>/common/shader/sfxPBS/default_Params</Text>
+        <Text>ac_metal00_prm</Text>
       </string>
     </param>
     <param name="Texture7">
