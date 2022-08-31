@@ -37,12 +37,14 @@ root.hasMesh=False
 imgnutexbLocation = os.getcwd() + "/img2nutexbGUI/img2nutexb.exe"
 
 def GetMaterialFile():
-    messagebox.showinfo(root.title(),"Please select your materials.txt exported via Blender")
-    ftypes = [    
-        ('materials list', ["*.txt"])
-    ]
-    file = filedialog.askopenfile(title = "Select materials.txt",filetypes = ftypes)
-    root.materialFile = file.name if file else ""
+    if (False):
+        messagebox.showinfo(root.title(),"Please select your materials.txt exported via Blender")
+        ftypes = [    
+            ('materials list', ["*.txt"])
+        ]
+        file = filedialog.askopenfile(title = "Select materials.txt",filetypes = ftypes)
+        root.materialFile = file.name if file else ""
+    root.materialFile = root.destinationDir+"/materials.txt"
     if (root.materialFile == ""):
         root.destroy()
         sys.exit("No model")
@@ -111,9 +113,9 @@ def ReadMaterialFile():
         root.materials.update({labels[l]:textures[l]})
 
 def Init():
+    SetDestinationDir()
     GetMaterialFile()
     ReadMaterialFile()
-    SetDestinationDir()
     SetSearchDir()
 
 root.matl = None
@@ -168,7 +170,7 @@ def MagicModel():
     #Assign all models their material based on their mesh's name
     if (root.hasModel):
         modl = ssbh_data_py.modl_data.read_modl(root.destinationDir+"/model.numdlb")
-        modl.save(root.destinationDir+"model_old.numdlb")
+        modl.save(root.destinationDir+"/model_old.numdlb")
         for modl_entry in modl.entries:
             newName = modl_entry.mesh_object_name
             suffix = (newName.find('.0'))
@@ -194,7 +196,8 @@ def ValidImage(img):
     return ext in imageExtensions
      
 #main functions
-def BatchImg():    
+def BatchImg():  
+    blankFile = os.getcwd() + r"\img2nutexbGUI\blank.nutexb"  
     emptyList=False
     rewriteList=False
     overwritePrompt=True
@@ -276,7 +279,6 @@ def BatchImg():
             continue
         
         #clone blank file
-        blankFile = os.getcwd() + r"\img2nutexbGUI\blank.nutexb"
         shutil.copy(blankFile,newNutexb)
 
         print("Converting "+os.path.basename(targetFile))
