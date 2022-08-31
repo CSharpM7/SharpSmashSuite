@@ -37,7 +37,7 @@ def setDestinationDir():
         root.destroy()
         sys.exit("rejected folder")
     if (IsValidDestination() == False):
-        messagebox.showerror(root.title(),"That folder doesn't contain a model,mesh or material folder")
+        messagebox.showerror(root.title(),"That folder doesn't contain a model,mesh or material file")
         root.destroy()
         sys.exit("No model")
         

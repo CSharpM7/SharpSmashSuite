@@ -53,7 +53,8 @@ def GetMaterialFile():
 def IsValidDestination():
     root.hasModel = os.path.exists(root.destinationDir+"/model.numdlb")
     root.hasMesh = os.path.exists(root.destinationDir+"/model.numshb")
-    return (root.hasModel or root.hasMesh or root.hasMaterial)
+    root.hasMaterials = os.path.exists(root.destinationDir+"/materials.txt")
+    return (root.hasModel and root.hasMesh and root.hasMaterials)
 
 #open folder dialogue
 def SetDestinationDir():
@@ -63,7 +64,7 @@ def SetDestinationDir():
         root.destroy()
         sys.exit("rejected folder")
     if (IsValidDestination() == False):
-        messagebox.showerror(root.title(),"That folder doesn't contain a model,mesh or material folder")
+        messagebox.showerror(root.title(),"That folder doesn't contain a model and mesh file, as also needs a materials.txt generated from Blender")
         root.destroy()
         sys.exit("No model")
 
@@ -113,6 +114,7 @@ def ReadMaterialFile():
         root.materials.update({labels[l]:textures[l]})
 
 def Init():
+    messagebox.showinfo(root.title(),"Make sure you imported your model already via StudioSB, and saved the materials.txt file generated from Blender to that model's folder")
     SetDestinationDir()
     GetMaterialFile()
     ReadMaterialFile()
