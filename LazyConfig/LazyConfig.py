@@ -117,6 +117,9 @@ def scanSubFolders(dir,modelFolders):
     folderName = os.path.basename(dir)
     if (folderName == "model" and root.modType == "stage"):
         modelFolders.append(dir)
+    #Include animation for directoryAddition
+    elif (folderName == "motion" and root.modType == "stage"):
+        modelFolders.append(dir)
         
     subfolders = [f.path for f in os.scandir(dir) if f.is_dir()]
     for dirname in list(subfolders):
@@ -171,6 +174,12 @@ root.canClone = False
 for folder in modelFolders:
     models = [f.path for f in os.scandir(folder) if f.is_dir()]
     for m in models:
+        baseName = os.path.basename(m)
+
+        if (os.path.basename(folder) == "motion"):
+            if (not baseName.startswith("new_")):
+                continue
+
         #for each model, trim down its name and add trimmed name to json
         trimmedName = trimName(m)
         entryName = trimmedName
@@ -192,18 +201,28 @@ for folder in modelFolders:
         if (not entryName in addFiles):
             addFiles[entryName] = []
 
+        #determine whether to use dirAddtion
+        newDir = False
+        #For Fighters, if the slot is greater than 7, then use dirAddition
+        if (root.modType == "fighter"):
+            fighterSlotAsInt = int(fighterSlot[3:4]) 
+            if (fighterSlotAsInt>=8):
+                UseFolderAddition(entryName)
+                newDir=True
+        #For Stages, if the folder contains the prefix "new_", then use dirAddition
+        elif (root.modType == "stage" and baseName.startswith("new_")):
+            UseFolderAddition(entryName)
+            newDir=True
+
+
         #comb through each file that ends in nutexb or nuanmb
         for file in os.listdir(m):
-            includeFile=file.endswith(".nutexb") or file.endswith(".nuanmb");
-            #For Fighters, if the slot is greater than 7, then include EVERYthing
-            if (root.modType == "fighter"):
-                fighterSlotAsInt = int(fighterSlot[3:4]) 
-                if (fighterSlotAsInt>=8):
-                    UseFolderAddition(entryName)
-                    includeFile = True
-                    
-            if includeFile:
+            includeFile=file.endswith(".nutexb") or file.endswith(".nuanmb")
+            if (includeFile or newDir):
                 addFiles[entryName].append(trimmedName + r"/" + file)
+        #remove any folders with no addition
+        if (len(addFiles[entryName])==0):
+            del addFiles[entryName]
 
 #I really should put this in it's own function but I'm too lazy
 if (root.canClone):
@@ -229,8 +248,12 @@ if (root.canClone):
 if (not root.folderAddition):
     del data["new-dir-infos"]
     del data["new-dir-infos-base"]
-else:
+elif (root.modType == "fighter"):
     messagebox.showwarning(root.title(),"Folder addition was used for "+entryName+", you will need to manually add sound files and infobase files")
+elif (root.modType == "stage"):
+    del data["new-dir-infos-base"]
+    #data["new-dir-infos-base"] = data["new-dir-infos"]
+    #messagebox.showinfo(root.title(),"Folder addition was used for "+entryName)
 
 #create configJson file
 writeLocation = root.searchDir + '/config.json'
