@@ -1,6 +1,5 @@
 #img2nutexb main program
 img2nutexb.exe
-*.txt
 *.ps1
 *.ini
 
@@ -165,3 +164,15 @@ dmypy.json
 template.numatb.bk
 
 MagicModel/model_old.numdlb
+
+LazyMat/matlablocation.txt
+
+img2nutexbGUI/output.txt
+
+img2nutexbGUI/textureList.txt
+
+NumatbGUI/output.txt
+
+output.txt
+
+textureList.txt
