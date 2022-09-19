@@ -138,7 +138,19 @@ def printAndWrite(string,filepath):
         with open(filepath, "a") as file:
             file.write(string)
             file.write("\n")
-    
+  
+def GetImageNodeForTree(node_tree):
+    nodes = node_tree.nodes
+    toReturn = nodes.get("Image Texture")
+    imageBaseName = "/common/shader/sfxPBS/default_White"
+    for n in nodes:
+        if (n.name == "Alpha" or n.name == "Diffuse"):
+            toReturn = n
+        elif (n.name == "Emissive" and toReturn == None):
+            toReturn = n
+            break
+    return toReturn
+
 class SharpSmashSuite_OT_list(Operator):
     bl_label = "List Materials"
     bl_idname = "sharpsmashsuite.list_operator"
@@ -155,6 +167,14 @@ class SharpSmashSuite_OT_list(Operator):
     directory: bpy.props.StringProperty(name="'filearchives' folder", 
                 subtype="DIR_PATH", options={'HIDDEN'})
 
+    def getBasename(imageNode):
+        #get the filepath to that image
+        imageFile = imageNode.image.filepath
+        folder = imageFile.rfind("\\")+1
+        imageBaseName = imageFile[folder:len(imageFile)]
+        #remove extension
+        ext = (imageBaseName.find('.'))
+        return imageBaseName[0:ext]
     
     def execute(self,context):
         
@@ -163,10 +183,13 @@ class SharpSmashSuite_OT_list(Operator):
         
         print(self.filepath)   
         print("")  
+        diffuse="col_"
+        bake="bake_"
 
         dictionary = {}
         #for each selected object...
         for obj in bpy.context.selected_objects:
+            textures = []
             #get all the materials
             material_slots = obj.material_slots
             for objMaterialSlot in material_slots:
@@ -176,28 +199,28 @@ class SharpSmashSuite_OT_list(Operator):
 
                 #Find an image Texture node for the texture. If there's not one just assign defaultWhite
                 nodes = objMaterial.node_tree.nodes
-                imageNode = nodes.get("Image Texture")
+                imageNode = GetImageNodeForTree(objMaterial.node_tree)
                 imageBaseName = "/common/shader/sfxPBS/default_White"
+                if (imageNode is None):
+                    for n in nodes:
+                        print(n.name)
+                        if (n.name == "Alpha"):
+                            imageNode = n
+                            break
                 if (imageNode is not None):
                     psdf = nodes.get("Principled BSDF")
+                    retro = imageNode.name != "Image Texture"
                     #find the texture file. If it's a pBSDF, we'll look for the BaseColor input
                     if psdf:
                         #for l in psdf.inputs[0].links:
                         print(materialName)
                         if (len(psdf.inputs[0].links) > 0):
                             imageNode = psdf.inputs[0].links[0].from_node
-                        
                     
-                    #get the filepath to that image
-                    imageFile = imageNode.image.filepath
-                    folder = imageFile.rfind("\\")+1
-                    imageBaseName = imageFile[folder:len(imageFile)]
-                    #remove extension
-                    ext = (imageBaseName.find('.'))
-                    imageBaseName = imageBaseName[0:ext]
-                               
-                #add dictionary entry
-                dictionary.update({materialName: imageBaseName})
+                    imageBaseName = SharpSmashSuite_OT_list.getBasename(imageNode)
+                    textures.append(diffuse+imageBaseName)
+                    #add dictionary entry
+                    dictionary.update({materialName: textures})
                 
         #only overwrite if it is a proper textfile
         if (self.filepath.find('.txt') != -1):
@@ -207,10 +230,14 @@ class SharpSmashSuite_OT_list(Operator):
         #print to file
         printAndWrite("------Materials------",self.filepath)
         for m, t in dictionary.items():
-            printAndWrite(m,self.filepath)
+            for text in t:
+                printAndWrite(m,self.filepath)
         printAndWrite("-------Textures-------",self.filepath)
         for m, t in dictionary.items():
-            printAndWrite(t,self.filepath)
+            for text in t:
+                if (len(t) == 1):
+                    text = text.replace(diffuse,"",1)
+                printAndWrite(text,self.filepath)
         printAndWrite("----------------------",self.filepath)
         report(self,{'INFO'}, "Materials saved to file and printed to console")            
         return {'FINISHED'}
@@ -223,7 +250,7 @@ class SharpSmashSuite_OT_list(Operator):
    
 def rename(obj, materialIndex, includeOriginal):
     if len(obj.material_slots) < 1:
-        return getTrueName(obj.Name)
+        return getTrueName(obj.name)
     
     desiredName=obj.material_slots[materialIndex].name
     newName = getTrueName(desiredName)
@@ -415,7 +442,8 @@ class SharpSmashSuite_OT_addMap(Operator):
         
         for obj in bpy.context.selected_objects:
             if obj.data.uv_layers:
-                if (not obj.data.uv_layers.find(self.newname)):
+                if (not self.newname in obj.data.uv_layers):
+                    print("Create key")
                     obj.data.uv_layers.new(name=self.newname)
                 else:
                     report(self,{'WARNING'}, obj.name + " already has " + self.newname)
