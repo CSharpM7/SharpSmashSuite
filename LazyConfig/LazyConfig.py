@@ -119,26 +119,27 @@ def UseFolderAddition(folderkey):
 #recursively scan subfolders to find "model" folders
 def scanSubFolders(dir,modelFolders):
     folderName = os.path.basename(dir)
-    if (folderName == "model" and root.modType == "stage"):
-        modelFolders.append(dir)
-    #Include animation for directoryAddition
-    elif (folderName == "motion" and root.modType == "stage"):
-        modelFolders.append(dir)
+    if (root.modType == "stage"):
+        #modelFolders.append(dir)
+        #Include animation for directoryAddition
+        if (folderName == "model" or folderName == "motion" or folderName == "effect"):
+            modelFolders.append(dir)
         
     subfolders = [f.path for f in os.scandir(dir) if f.is_dir()]
     for dirname in list(subfolders):
         subfolders.extend(scanSubFolders(dirname,modelFolders))
         #for fighters, check every body/alt folder
-        if ((folderName == "model" or folderName == "motion") and root.modType == "fighter"):
-            fighterFolders = [m.path for m in os.scandir(dir) if m.is_dir()]
-            for fname in list(fighterFolders):
-                modelFolders.append(fname)
+        if (root.modType == "fighter"):
+            if (folderName == "model" or folderName == "motion"):
+                fighterFolders = [m.path for m in os.scandir(dir) if m.is_dir()]
+                for fname in list(fighterFolders):
+                    modelFolders.append(fname)
     return subfolders,modelFolders
 
 #start of recursion, this will only begin recursive search if the directory name is a whitelist,
 #or a subfolder in the directory is in the whitelist
 def scanSubFoldersStart(dir,modelFolders):
-    whitelist = ["fighter","stage"]
+    whitelist = ["fighter","stage","effect"]
 
     #check if current folder is in whitelist
     folderName = os.path.basename(dir)
@@ -160,7 +161,10 @@ def scanSubFoldersStart(dir,modelFolders):
 #trims a file/folder name to [stage or fighter]/*
 def trimName(file):
     prefix = (file.find(root.modType+'\\'))
-    trimmedName = file[prefix:len(file)]
+    if ("effect" in file):
+        if (not "battle" in file) and (not "normal" in file):
+            prefix = (file.find("effect"))
+    trimmedName = file[prefix:]
     trimmedName = trimmedName.replace("\\","/")
     return trimmedName
 
@@ -177,6 +181,15 @@ def CreateVanillaDict():
     for dirname in list(subfolders):
         trimmedName = trimName(dirname)
         mods.append(trimmedName)
+    effectFolders = root.searchDir+"/effect/stage"
+    if (os.path.isdir(effectFolders)):
+        subfolders = [f.path for f in os.scandir(effectFolders) if f.is_dir()]
+        for dirname in list(subfolders):
+            trimmedName = trimName(dirname)
+            mods.append(trimmedName)
+        mods.append("effect")
+        mods.append("effect/stage")
+
 
     #Relevant files are the vanilla files that pertain to these stages/fighters
     filesystemFile = open(root.txtFile,'r')
@@ -191,6 +204,7 @@ def CreateVanillaDict():
         for m in mods:
             if (m in filesystem[i]):
                 isRelevant=True
+                break
         if (isRelevant):
             root.vanillaFiles.append(filesystem[i])
 
@@ -218,6 +232,68 @@ def FileInVanilla(entryName):
             toReturn=True
     return toReturn
 
+def AddEntry(m):
+    baseName = os.path.basename(m)
+    #for each model, trim down its name and add trimmed name to json
+    trimmedName = trimName(m)
+    entryName = trimmedName
+    fighterSlot = 0
+
+    #fighters have different entryNames
+    if (root.modType == "fighter"):
+        fighterNameR = trimmedName.find("/model")
+        fighterName = (trimmedName[0:fighterNameR]).replace("fighter/","")
+        fighterSlot = trimmedName[len(trimmedName)-4:len(trimmedName)]
+        entryName = "fighter/" + fighterName + fighterSlot 
+        if (root.currentSlot == ""):
+            root.currentSlot = fighterSlot
+            root.canClone = True
+        elif (root.currentSlot != fighterSlot):
+            root.canClone = False
+
+    #if entryName doesn't already exist, add it
+    if (not entryName in root.addFiles):
+        root.addFiles[entryName] = []
+
+    #determine whether to use dirAddtion
+    newDir = False
+    #For Fighters, if the slot is greater than 7, then use dirAddition
+    if (root.modType == "fighter"):
+        fighterSlotAsInt = int(fighterSlot[3:4]) 
+        if (fighterSlotAsInt>=8):
+            UseFolderAddition(entryName)
+            newDir=True
+    #For Stages, check if the folder is not in vanilla
+    elif (root.modType == "stage" and not FolderInVanilla(entryName)):
+        UseFolderAddition(entryName)
+        newDir=True
+
+
+    #comb through each file
+    for file in os.listdir(m):
+        filename = os.path.basename(file)
+        #Don't include leftover xml and jsons
+        if (".xml" in filename or ".json" in filename):
+            continue
+        #Only include model folders if using file addition
+        if ("model" in filename and not newDir):
+            continue
+
+        fileToAdd = trimmedName + r"/" + file
+        print("adding:"+fileToAdd)
+        root.addFiles[entryName].append(fileToAdd)
+
+    #remove any folders with no addition
+    if (len(root.addFiles[entryName])==0):
+        del root.addFiles[entryName]
+    else:
+        #Print the filename
+        toPrint = trimmedName
+        if (newDir):
+            toPrint = "(NEW)"+toPrint
+        print(toPrint)
+
+
 def ScanFolders():
     subfolders,modelFolders = scanSubFoldersStart(root.searchDir,[])
     if (len(modelFolders)==0):
@@ -233,63 +309,23 @@ def ScanFolders():
     for folder in modelFolders:
         models = [f.path for f in os.scandir(folder) if f.is_dir()]
         for m in models:
-            baseName = os.path.basename(m)
-
-            #for each model, trim down its name and add trimmed name to json
-            trimmedName = trimName(m)
-            entryName = trimmedName
-            fighterSlot = 0
-
-            #fighters have different entryNames
-            if (root.modType == "fighter"):
-                fighterNameR = trimmedName.find("/model")
-                fighterName = (trimmedName[0:fighterNameR]).replace("fighter/","")
-                fighterSlot = trimmedName[len(trimmedName)-4:len(trimmedName)]
-                entryName = "fighter/" + fighterName + fighterSlot 
-                if (root.currentSlot == ""):
-                    root.currentSlot = fighterSlot
-                    root.canClone = True
-                elif (root.currentSlot != fighterSlot):
-                    root.canClone = False
-
-            #if entryName doesn't already exist, add it
-            if (not entryName in root.addFiles):
-                root.addFiles[entryName] = []
-
-            #determine whether to use dirAddtion
-            newDir = False
-            #For Fighters, if the slot is greater than 7, then use dirAddition
-            if (root.modType == "fighter"):
-                fighterSlotAsInt = int(fighterSlot[3:4]) 
-                if (fighterSlotAsInt>=8):
-                    UseFolderAddition(entryName)
-                    newDir=True
-            #For Stages, check if the folder is not in vanilla
-            elif (root.modType == "stage" and not FolderInVanilla(entryName)):
-                UseFolderAddition(entryName)
-                newDir=True
-
-            #Print the filename
-            toPrint = trimmedName
-            if (newDir):
-                toPrint = "(NEW)"+toPrint
-            print(toPrint)
-
-            #comb through each file that ends in nutexb or nuanmb
-            for file in os.listdir(m):
-                #includeFile=file.endswith(".nutexb") or file.endswith(".nuanmb")
-                includeFile = not "model" in os.path.basename(file)
-                if (includeFile or newDir):
-                    root.addFiles[entryName].append(trimmedName + r"/" + file)
-            #remove any folders with no addition
-            if (len(root.addFiles[entryName])==0):
-                del root.addFiles[entryName]
+            if (os.path.basename(m) == "stage"):
+                stages = [f.path for f in os.scandir(m) if f.is_dir()]
+                for s in stages:
+                    AddEntry(s)
+            else:
+                AddEntry(m)
+        trimmedName = trimName(folder)
+        if (os.path.basename(folder) == "effect"):
+            AddEntry(folder)
 
 #Ask to clone config.json across multiple Fighter slots
 def CloneSlots():
+    root.clonedSlots = False
     if (root.canClone):
         res = messagebox.askquestion(root.title(), 'Make copies of '+root.currentSlot+' config root.data across c00-c07?')
         if res == 'yes':
+            root.clonedSlots = True
             currentSlotAsInt = int(root.currentSlot[3:4])
             originalFiles = root.addFiles.copy()
             #clone
@@ -307,16 +343,16 @@ def CloneSlots():
                 #originalFiles[]
 
 def FinishJSON():
-    #Remove any files that are in vanilla
-    cloneDict = root.addFiles.copy()
-    for model in cloneDict:
-        cloneModel = root.addFiles[model].copy()
-        for file in cloneModel:
-            if (FileInVanilla(file)):
-                print(file)
-                root.addFiles[model].remove(file)
-        if (len(root.addFiles[model])==0):
-            del root.addFiles[model]
+    #Remove any files that are in vanilla if cloning wasn't used
+    if (root.clonedSlots == False):
+        cloneDict = root.addFiles.copy()
+        for model in cloneDict:
+            cloneModel = root.addFiles[model].copy()
+            for file in cloneModel:
+                if (FileInVanilla(file)):
+                    root.addFiles[model].remove(file)
+            if (len(root.addFiles[model])==0):
+                del root.addFiles[model]
 
     #remove folderAddition if not used
     if (not root.folderAddition):
