@@ -165,6 +165,11 @@ def trimName(file):
     return trimmedName
 
 def CreateVanillaDict():
+    root.vanillaFiles = []
+    root.vanillaDirs = []
+    if (not os.path.isfile(root.txtFile)):
+        return
+
     #find all stages in this mod
     modFolders = root.searchDir+"/"+root.modType
     mods = []
@@ -174,7 +179,6 @@ def CreateVanillaDict():
         mods.append(trimmedName)
 
     #Relevant files are the vanilla files that pertain to these stages/fighters
-    root.vanillaFiles = []
     filesystemFile = open(root.txtFile,'r')
     filesystem = filesystemFile.readlines()
     filesystem = [file.rstrip() for file in filesystem]
@@ -191,7 +195,6 @@ def CreateVanillaDict():
             root.vanillaFiles.append(filesystem[i])
 
     #Only gather information about new directories
-    root.vanillaDirs = []
     for r in root.vanillaFiles:
         directory = r.rfind("/")
         myDir = r[:directory]
@@ -199,6 +202,10 @@ def CreateVanillaDict():
             root.vanillaDirs.append(myDir)
 
 def FolderInVanilla(entryName):
+    #If filesystem doesn't exist, just assume the folder is in vanilla
+    if (len(root.vanillaDirs)==0):
+        return True
+
     toReturn = False
     for d in root.vanillaDirs:
         if (entryName in d):
