@@ -113,6 +113,7 @@ def Init():
 def UseFolderAddition(folderkey):
     root.folderAddition=True
     if (not folderkey in root.addFolders):
+        print("(NEW)"+folderkey)
         root.addFolders.append(folderkey)
 
 
@@ -280,19 +281,12 @@ def AddEntry(m):
             continue
 
         fileToAdd = trimmedName + r"/" + file
-        print("adding:"+fileToAdd)
-        root.addFiles[entryName].append(fileToAdd)
+        if (not fileToAdd in root.addFiles[entryName]):
+            root.addFiles[entryName].append(fileToAdd)
 
     #remove any folders with no addition
     if (len(root.addFiles[entryName])==0):
         del root.addFiles[entryName]
-    else:
-        #Print the filename
-        toPrint = trimmedName
-        if (newDir):
-            toPrint = "(NEW)"+toPrint
-        print(toPrint)
-
 
 def ScanFolders():
     subfolders,modelFolders = scanSubFoldersStart(root.searchDir,[])
@@ -340,7 +334,6 @@ def CloneSlots():
                     newValue = value.replace(root.currentSlot,"/c0"+str(i))
                     root.addFiles[newKey].append(newValue)
                     print(newValue)
-                #originalFiles[]
 
 def FinishJSON():
     #Remove any files that are in vanilla if cloning wasn't used
@@ -351,6 +344,8 @@ def FinishJSON():
             for file in cloneModel:
                 if (FileInVanilla(file)):
                     root.addFiles[model].remove(file)
+                else:
+                    print("adding:"+file)
             if (len(root.addFiles[model])==0):
                 del root.addFiles[model]
 
