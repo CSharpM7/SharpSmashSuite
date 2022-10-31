@@ -97,7 +97,7 @@ class SharpSmashSuite_PanelRename(bpy.types.Panel):
         
 class SharpSmashSuite_PanelObject(bpy.types.Panel):
     bl_label = "Manipulate Objects"
-    bl_idname = "Swap Blendz"
+    bl_idname = ""
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Sharp Smash Suite"
@@ -108,10 +108,12 @@ class SharpSmashSuite_PanelObject(bpy.types.Panel):
         layout = self.layout
         
         column = layout.column()
+        column.operator("sharpsmashsuite.renamematerial_operator",icon="FORCE_TEXTURE")
         column.operator("sharpsmashsuite.separate_operator", icon = "MATERIAL")
         column.operator("sharpsmashsuite.renamemap_operator", icon = "GROUP_UVS")
         column.operator("sharpsmashsuite.addmap_operator", icon = "UV")
         column.operator("sharpsmashsuite.join_operator", icon = "OUTLINER_OB_MESH")
+        column.operator("sharpsmashsuite.clean_operator", icon = "BRUSH_DATA")
         
 class SharpSmashSuite_PanelMisc(bpy.types.Panel):
     bl_label = "Misc"
@@ -121,8 +123,9 @@ class SharpSmashSuite_PanelMisc(bpy.types.Panel):
     bl_category = "Sharp Smash Suite"
     bl_parent_id = "sharpsmashsuite.panel_main"
     bl_options = {'DEFAULT_CLOSED'}
-    
+
     def draw(self,context):
+        return
         layout = self.layout
         
         column = layout.column()
@@ -151,6 +154,15 @@ def GetImageNodeForTree(node_tree):
             break
     return toReturn
 
+def getBasename(imageNode):
+    #get the filepath to that image
+    imageFile = imageNode.image.filepath
+    folder = imageFile.rfind("\\")+1
+    imageBaseName = imageFile[folder:len(imageFile)]
+    #remove extension
+    ext = (imageBaseName.find('.'))
+    return imageBaseName[0:ext]
+
 class SharpSmashSuite_OT_list(Operator):
     bl_label = "List Materials"
     bl_idname = "sharpsmashsuite.list_operator"
@@ -167,14 +179,6 @@ class SharpSmashSuite_OT_list(Operator):
     directory: bpy.props.StringProperty(name="'filearchives' folder", 
                 subtype="DIR_PATH", options={'HIDDEN'})
 
-    def getBasename(imageNode):
-        #get the filepath to that image
-        imageFile = imageNode.image.filepath
-        folder = imageFile.rfind("\\")+1
-        imageBaseName = imageFile[folder:len(imageFile)]
-        #remove extension
-        ext = (imageBaseName.find('.'))
-        return imageBaseName[0:ext]
     
     def execute(self,context):
         
@@ -217,7 +221,7 @@ class SharpSmashSuite_OT_list(Operator):
                         if (len(psdf.inputs[0].links) > 0):
                             imageNode = psdf.inputs[0].links[0].from_node
                     
-                    imageBaseName = SharpSmashSuite_OT_list.getBasename(imageNode)
+                    imageBaseName = getBasename(imageNode)
                     textures.append(diffuse+imageBaseName)
                     #add dictionary entry
                     dictionary.update({materialName: textures})
@@ -526,7 +530,99 @@ class SharpSmashSuite_OT_join(Operator):
         
         bpy.ops.wm.call_menu(name=SharpSmashSuite_MENU_join.bl_idname)
         return {'FINISHED'}
+
+class SharpSmashSuite_OT_clean(Operator):
+    bl_label = "Clean Objects"
+    bl_idname = "sharpsmashsuite.clean_operator"
+    bl_description = """Removes meshes without vertices. Select nothing to clean all objects"""
+    desiredMaterial = None
+        
+    def execute(self,context):
+        objects = bpy.context.scene.objects
+        if (not HasNoObjectsSelected(self)):
+            objects = bpy.context.selected_objects
+        
+
+        empty_meshobs = [o for o in objects
+                 if o.type == 'MESH'
+                 and not o.data.vertices]
+                 
+        while empty_meshobs:
+            bpy.data.objects.remove(empty_meshobs.pop())
+
+        for obj in objects:
+            if (obj.type != "MESH"):
+                continue
+            if (len(obj.material_slots)==0):
+                continue
+            #SOURCE: remove if material uses Tools/Trigger
+            print(obj.material_slots[0].name)
+            if (obj.material_slots[0].name == "TOOLS/TOOLSTRIGGER"):
+                bpy.data.objects.remove(obj) 
+
+ 
+
+        report(self,{'INFO'}, "Models Cleaned")
+        return {'FINISHED'}
     
+
+class SharpSmashSuite_OT_RenameMaterial_confirm(Operator):
+    bl_label = "OK"
+    bl_idname = "sharpsmashsuite.renamematerial_operator_confirm"
+    
+    def execute(self,context):
+        
+        for obj in bpy.data.objects:
+            for num, m in list(enumerate(obj.material_slots)): #rename materials with . numbers
+                if m.material:
+                    if (m.material.node_tree == None):
+                        continue
+                    if (m.material.node_tree.nodes == None):
+                        continue
+                    textureName = m.material.name
+                        
+                    material_slots = obj.material_slots
+                    #Find an image Texture node for the texture. If there's not one just assign defaultWhite
+                    nodes = m.material.node_tree.nodes
+                    imageNode = GetImageNodeForTree(m.material.node_tree)
+                    imageBaseName = "/common/shader/sfxPBS/default_White"
+                    if (imageNode is not None):
+                        textureName = getBasename(imageNode)
+                    else:
+                        continue
+                    print(m.material.name+"("+imageNode.name+"):"+textureName)
+                    m.material.name = textureName
+                    
+            
+        report(self,{'INFO'}, "Conversion complete")
+        return {'FINISHED'}
+        
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+    
+class SharpSmashSuite_MENU_RenameMaterial(bpy.types.Menu):
+    bl_label = "Set Material Names To Texture"
+    bl_idname = "sharpsmashsuite.renamematerial_menu"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.label(text="WARNING", icon='ERROR')
+        layout.label(text="This operation will change ALL of your Materials. Click OK to proceed")
+        layout.operator("sharpsmashsuite.renamematerial_operator_confirm")
+    
+
+class SharpSmashSuite_OT_RenameMaterial(Operator):
+    bl_label = "Set Material Names To Texture"
+    bl_idname = "sharpsmashsuite.renamematerial_operator"
+    bl_description = """Sets the name of a material to its diffuse texture, for combining like objects"""
+    desiredMaterial = None
+        
+    def execute(self,context):
+        
+        bpy.ops.wm.call_menu(name=SharpSmashSuite_MENU_RenameMaterial.bl_idname)
+        return {'FINISHED'}
+
 class SharpSmashSuite_OT_swap(Operator):
     bl_label = "Swap Materials"
     bl_idname = "sharpsmashsuite.swap_operator"
@@ -638,6 +734,7 @@ def draw_item(self, context):
 classes = [SharpSmashSuite_MainPanel,SharpSmashSuite_PanelRename,SharpSmashSuite_PanelObject,SharpSmashSuite_PanelMisc,
 SharpSmashSuite_OT_swap,SharpSmashSuite_OT_list,SharpSmashSuite_OT_separate,
 SharpSmashSuite_OT_vertex,SharpSmashSuite_OT_rename,SharpSmashSuite_OT_renameMaps,SharpSmashSuite_OT_addMap,
+SharpSmashSuite_OT_clean,SharpSmashSuite_OT_RenameMaterial,SharpSmashSuite_MENU_RenameMaterial,SharpSmashSuite_OT_RenameMaterial_confirm,
 SharpSmashSuite_OT_join,SharpSmashSuite_MENU_join,SharpSmashSuite_OT_join_confirm]
 def register():
     for cls in classes:
