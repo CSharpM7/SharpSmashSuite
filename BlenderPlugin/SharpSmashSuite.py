@@ -78,9 +78,10 @@ class SharpSmashSuite_MainPanel(bpy.types.Panel):
             icon='URL'
             )
         op.url = 'www.google.com'
+        self.layout.operator("sharpsmashsuite.list_operator", icon = "FILE")
         
 class SharpSmashSuite_PanelRename(bpy.types.Panel):
-    bl_label = "Renaming and Exporting"
+    bl_label = "Renaming"
     bl_idname = "sharpsmashsuite.panel_rename"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -92,8 +93,9 @@ class SharpSmashSuite_PanelRename(bpy.types.Panel):
         layout = self.layout
         
         column = layout.column()
-        column.operator("sharpsmashsuite.list_operator", icon = "FILE")
         column.operator("sharpsmashsuite.rename_operator", icon = "SMALL_CAPS")
+        column.operator("sharpsmashsuite.renamematerial_operator",icon="FORCE_TEXTURE")
+        column.operator("sharpsmashsuite.renamemap_operator", icon = "GROUP_UVS")
         
 class SharpSmashSuite_PanelObject(bpy.types.Panel):
     bl_label = "Manipulate Objects"
@@ -108,9 +110,7 @@ class SharpSmashSuite_PanelObject(bpy.types.Panel):
         layout = self.layout
         
         column = layout.column()
-        column.operator("sharpsmashsuite.renamematerial_operator",icon="FORCE_TEXTURE")
         column.operator("sharpsmashsuite.separate_operator", icon = "MATERIAL")
-        column.operator("sharpsmashsuite.renamemap_operator", icon = "GROUP_UVS")
         column.operator("sharpsmashsuite.addmap_operator", icon = "UV")
         column.operator("sharpsmashsuite.join_operator", icon = "OUTLINER_OB_MESH")
         column.operator("sharpsmashsuite.clean_operator", icon = "BRUSH_DATA")
@@ -125,12 +125,12 @@ class SharpSmashSuite_PanelMisc(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self,context):
-        return
         layout = self.layout
         
         column = layout.column()
-        column.operator("sharpsmashsuite.vertex_operator", icon = "GROUP_VERTEX")
-        column.operator("sharpsmashsuite.swap_operator", icon = "SPREADSHEET")  
+        column.operator("sharpmetroidsuite.reassign_operator",icon="OBJECT_DATAMODE")
+        #column.operator("sharpsmashsuite.vertex_operator", icon = "GROUP_VERTEX")
+        #column.operator("sharpsmashsuite.swap_operator", icon = "SPREADSHEET")  
         
     
 #Print to console and write to file
@@ -164,7 +164,7 @@ def getBasename(imageNode):
     return imageBaseName[0:ext]
 
 class SharpSmashSuite_OT_list(Operator):
-    bl_label = "List Materials"
+    bl_label = "Export Material List"
     bl_idname = "sharpsmashsuite.list_operator"
     bl_description = """Writes a list of materials and textures to a file.
     Useful with LazyMat to fill the spreadsheet with materials and textures, and
@@ -263,7 +263,7 @@ def rename(obj, materialIndex, includeOriginal):
     return newName
 
 class SharpSmashSuite_OT_rename(Operator):
-    bl_label = "Rename to Material"
+    bl_label = "Rename Mesh to Material"
     bl_idname = "sharpsmashsuite.rename_operator"
     bl_description = """Renames all the selected objects to their material's name
     Useful for exporting the model and using LazyNumdlb to assign materials to meshes"""
@@ -601,7 +601,7 @@ class SharpSmashSuite_OT_RenameMaterial_confirm(Operator):
         return context.window_manager.invoke_props_dialog(self)
     
 class SharpSmashSuite_MENU_RenameMaterial(bpy.types.Menu):
-    bl_label = "Set Material Names To Texture"
+    bl_label = "Rename Material To Texture"
     bl_idname = "sharpsmashsuite.renamematerial_menu"
 
     def draw(self, context):
@@ -613,7 +613,7 @@ class SharpSmashSuite_MENU_RenameMaterial(bpy.types.Menu):
     
 
 class SharpSmashSuite_OT_RenameMaterial(Operator):
-    bl_label = "Set Material Names To Texture"
+    bl_label = "Rename Material To Texture"
     bl_idname = "sharpsmashsuite.renamematerial_operator"
     bl_description = """Sets the name of a material to its diffuse texture, for combining like objects"""
     desiredMaterial = None
@@ -725,7 +725,70 @@ class SharpSmashSuite_OT_vertex(Operator):
 
     #def invoke(self, context, event):
     #    return context.window_manager.invoke_props_dialog(self)
+   
+class SharpMetroidSuite_OT_Reassign(Operator):
+    bl_label = "Convert Metroid Meshes to Smash"
+    bl_idname = "sharpmetroidsuite.reassign_operator"
+    bl_description = """METROID PRIME (1)
+    Converts Meshes by removing baked channel, setting the active UV to map1, and adding a colorset if needed"""
+    removeBake: bpy.props.BoolProperty(name = "Remove Baked UV Channel", default=False)
+    
+    
+    def execute(self,context):
+        if (HasNoObjectsSelected(self)):
+            return {'FINISHED'}
         
+        for obj in bpy.context.selected_objects:       
+            if (obj.data.uv_layers.find("map1")):
+                print("Already ran")         
+            #Add vertex color
+            if (len(obj.data.vertex_colors)==0):
+                print("Add color")
+                obj.data.vertex_colors.new(name="colorSet1")
+                
+            isLightmap=False
+            #Set active texture
+            material_slots = obj.material_slots
+            for objMaterialSlot in material_slots:
+                objMaterial = objMaterialSlot.material
+                print(objMaterial.name)
+                #let's get the material name, and drop the .00n
+                #materialName = getTrueName(objMaterial.name)
+
+                #Find an image Texture node for the texture. If there's not one just assign defaultWhite
+                nodes = objMaterial.node_tree.nodes
+                imageNode = GetImageNodeForTree(objMaterial.node_tree)
+                if (imageNode == None):
+                    print("No image?")
+                    continue
+                isLightmap = imageNode.name == "Emissive"
+                nodes.active=imageNode
+                print("Set active image")
+                
+            #Set visible UV to second
+            targetUV = 0 if isLightmap else 1
+            if (len(obj.data.uv_layers) == 1):
+                targetUV = 0
+            else:
+                obj.data.uv_layers[1-targetUV].name = "bake1"
+            obj.data.uv_layers[targetUV].name = "map1"
+            obj.data.uv_layers[targetUV].active=True
+            obj.data.uv_layers[targetUV].active_render=True
+            if (self.removeBake):
+                for uv in obj.data.uv_layers:
+                    print(uv.name)
+                    if (uv.name != "map1" and uv.name != "colorSet1"):
+                        obj.data.uv_layers.remove(uv)
+                    
+            
+        report(self,{'INFO'}, "Conversion complete")
+        return {'FINISHED'}
+        
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+
+
 def draw_item(self, context):
     layout = self.layout
     layout.menu(SharpSmashSuite_MENU_join.bl_idname)
@@ -735,7 +798,9 @@ classes = [SharpSmashSuite_MainPanel,SharpSmashSuite_PanelRename,SharpSmashSuite
 SharpSmashSuite_OT_swap,SharpSmashSuite_OT_list,SharpSmashSuite_OT_separate,
 SharpSmashSuite_OT_vertex,SharpSmashSuite_OT_rename,SharpSmashSuite_OT_renameMaps,SharpSmashSuite_OT_addMap,
 SharpSmashSuite_OT_clean,SharpSmashSuite_OT_RenameMaterial,SharpSmashSuite_MENU_RenameMaterial,SharpSmashSuite_OT_RenameMaterial_confirm,
-SharpSmashSuite_OT_join,SharpSmashSuite_MENU_join,SharpSmashSuite_OT_join_confirm]
+SharpSmashSuite_OT_join,SharpSmashSuite_MENU_join,SharpSmashSuite_OT_join_confirm,
+SharpMetroidSuite_OT_Reassign
+]
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
