@@ -310,6 +310,9 @@ class SharpSmashSuite_OT_separate(Operator):
             
         #for each selected object...
         for obj in bpy.context.selected_objects:
+            #If there's no data, ignore
+            if (not obj.data):
+                continue
             material_slots = obj.material_slots
             
             #Step one: Clone the object, we'll dissect this clone bit by bit
@@ -534,7 +537,7 @@ class SharpSmashSuite_OT_join(Operator):
 class SharpSmashSuite_OT_clean(Operator):
     bl_label = "Clean Objects"
     bl_idname = "sharpsmashsuite.clean_operator"
-    bl_description = """Removes meshes without vertices. Select nothing to clean all objects"""
+    bl_description = """Removes meshes without vertices, and removes empties. Select nothing to clean all objects"""
     desiredMaterial = None
         
     def execute(self,context):
@@ -551,12 +554,19 @@ class SharpSmashSuite_OT_clean(Operator):
             bpy.data.objects.remove(empty_meshobs.pop())
 
         for obj in objects:
-            if (obj.type != "MESH"):
+            #Remove empties
+            if (obj.type == "EMPTY"):
+                print(obj.name)
+                bpy.data.objects.remove(obj) 
                 continue
+            #if it isn't a mesh, ignore it
+            elif (obj.type != "MESH"):
+                continue
+
+
             if (len(obj.material_slots)==0):
                 continue
             #SOURCE: remove if material uses Tools/Trigger
-            print(obj.material_slots[0].name)
             if (obj.material_slots[0].name == "TOOLS/TOOLSTRIGGER"):
                 bpy.data.objects.remove(obj) 
 
