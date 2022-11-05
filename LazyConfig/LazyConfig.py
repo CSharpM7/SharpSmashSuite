@@ -115,6 +115,11 @@ def UseFolderAddition(folderkey):
     if (not folderkey in root.addFolders):
         print("(NEW)"+folderkey)
         root.addFolders.append(folderkey)
+    #if (root.modType == "fighter"):
+    #    messagebox.showwarning(root.title(),"Folder addition was used for "+entryName+"; LazyConfig does not support Additional Slots. Please use ReslotterGUI instead.")
+    #    webbrowser.open("https://github.com/CSharpM7/reslotter")
+    #    root.destroy()
+    #    sys.exit("Attempted Slot Addition")
 
 
 #recursively scan subfolders to find "model" folders
@@ -354,7 +359,8 @@ def FinishJSON():
         del root.data["new-dir-infos"]
         del root.data["new-dir-infos-base"]
     elif (root.modType == "fighter"):
-        messagebox.showwarning(root.title(),"Folder addition was used for "+entryName+", you will need to manually add sound files, infobase files and create shared files")
+        messagebox.showwarning(root.title(),"Folder addition was used for "+entryName+"; LazyConfig does not support Additional Slots. Please use ReslotterGUI instead.")
+        webbrowser.open("https://github.com/CSharpM7/reslotter")
     elif (root.modType == "stage"):
         del root.data["new-dir-infos-base"]
 
