@@ -552,6 +552,8 @@ class SharpSmashSuite_OT_clean(Operator):
                  
         while empty_meshobs:
             bpy.data.objects.remove(empty_meshobs.pop())
+            
+        objects = bpy.context.scene.objects
 
         for obj in objects:
             #Remove empties
