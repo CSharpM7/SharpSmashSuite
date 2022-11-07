@@ -149,7 +149,11 @@ def GetImageNodeForTree(node_tree):
     for n in nodes:
         if (n.name == "Alpha" or n.name == "Diffuse"):
             toReturn = n
+            break
         elif (n.name == "Emissive" and toReturn == None):
+            toReturn = n
+            break
+        elif (n.name == "$basetexture" and toReturn == None):
             toReturn = n
             break
     return toReturn
@@ -205,15 +209,8 @@ class SharpSmashSuite_OT_list(Operator):
                 nodes = objMaterial.node_tree.nodes
                 imageNode = GetImageNodeForTree(objMaterial.node_tree)
                 imageBaseName = "/common/shader/sfxPBS/default_White"
-                if (imageNode is None):
-                    for n in nodes:
-                        print(n.name)
-                        if (n.name == "Alpha"):
-                            imageNode = n
-                            break
                 if (imageNode is not None):
                     psdf = nodes.get("Principled BSDF")
-                    retro = imageNode.name != "Image Texture"
                     #find the texture file. If it's a pBSDF, we'll look for the BaseColor input
                     if psdf:
                         #for l in psdf.inputs[0].links:
@@ -552,7 +549,7 @@ class SharpSmashSuite_OT_clean(Operator):
                  
         while empty_meshobs:
             bpy.data.objects.remove(empty_meshobs.pop())
-            
+
         objects = bpy.context.scene.objects
 
         for obj in objects:
