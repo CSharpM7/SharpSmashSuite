@@ -22,47 +22,28 @@ from multiprocessing import Process
 import threading
 from queue import Queue
 
-#create initial GUI settings
 root = Tk()
-root.title("img2nutexbGUI")
-root.iconbitmap("icon.ico")
-root.width=600
-root.height=250
-root.geometry(str(root.width)+"x"+str(root.height))
+progressroot = Tk()
+root.fromOutside=False
+root.currentDir = os.getcwd()
+
 #assumedLocation of img program if no config
-defaultLocation = os.getcwd() + "\img2nutexb.exe"
+defaultLocation = root.currentDir + "\img2nutexb.exe"
 #default configuration
 defaultConfig = configparser.ConfigParser()
 defaultConfig['DEFAULT'] = {
     'img2nutexbLocation': defaultLocation,
     'searchDir' : "",
     'destDir' : "",
-    'maxThreads': "4"
+    'root.maxThreads': "4"
     }
 
-progressroot = Tk()
-progressroot.withdraw()
-progressroot.minsize(250,100)
 
 def CreateConfig():
     print("creating valid config")
     with open('config.ini', 'w+') as configfile:
         defaultConfig.write(configfile)
     config.read('config.ini')
-
-#create a config if necessary
-if (not os.path.isfile(os.getcwd() + r"\config.ini")):
-    CreateConfig()
-config.read('config.ini')
-      
-#read in the config file to find the img program file
-imgnutexbLocation = config["DEFAULT"]["img2nutexbLocation"]
-print("imgnutexbLocation: "+imgnutexbLocation)
-if not "maxThreads" in config["DEFAULT"]:
-    config["DEFAULT"]["maxThreads"]="4"
-    with open('config.ini', 'w+') as configfile:
-        config.write(configfile)
-maxThreads = int(config["DEFAULT"]["maxThreads"])
 
 #truncate strings for labels
 def truncate(string,direciton=W,limit=20,ellipsis=True):
@@ -90,43 +71,47 @@ def message(text,type=""):
     
 #check to make sure that the program is a valid file
 def ValidExe():
-    if (not imgnutexbLocation): return False
-    if (os.path.isfile(imgnutexbLocation)):
-        if (imgnutexbLocation.endswith(".exe")):
+    if (not root.imgnutexbLocation): return False
+    if (os.path.isfile(root.imgnutexbLocation)):
+        if (root.imgnutexbLocation.endswith(".exe")):
             return True
     return False
-            
-#if we don't have img2nutexb here, then ask for it!
-if (ValidExe() == False):
-    message(type = "Warning",text = "img2nutexb.exe not found, please select it")
-    ftypes = [    
-        ('img2nutexb program', ["*.exe"])
-    ]
-    file = filedialog.askopenfile(title = "Search",filetypes = ftypes)
-    imgnutexbLocation = file.name if file else ""
-    #if selected file is in valid, quit
-    if (not ValidExe()):
-        config.set("DEFAULT","img2nutexbLocation",defaultLocation)
-        message(type = "ERROR",text = "Selected file not valid")
+        
+
+def ValidatePorgram():
+    #if we don't have img2nutexb here, then ask for it!
+    if (ValidExe() == False):
+        message(type = "Warning",text = "img2nutexb.exe not found, please select it")
+        ftypes = [    
+            ('img2nutexb program', ["*.exe"])
+        ]
+        file = filedialog.askopenfile(title = "Search",filetypes = ftypes)
+        root.imgnutexbLocation = file.name if file else ""
+        #if selected file is in valid, quit
+        if (not ValidExe()):
+            config.set("DEFAULT","img2nutexbLocation",defaultLocation)
+            message(type = "ERROR",text = "Selected file not valid")
+            root.destroy()
+            sys.exit("No img2nutexb.exe file")
+
+        #write new location to config
+        config.set("DEFAULT","img2nutexbLocation",root.imgnutexbLocation)
+        with open('config.ini', 'w+') as configfile:
+            config.write(configfile)
+
+    #blank nutexbFile
+    root.blankFile = root.currentDir + r"\blank.nutexb"
+    if (not os.path.isfile(root.blankFile)):
+        message(type = "ERROR",text = "blank.nutexb is missing!")
         root.destroy()
-        sys.exit("No img2nutexb.exe file")
-
-    #write new location to config
-    config.set("DEFAULT","img2nutexbLocation",imgnutexbLocation)
-    with open('config.ini', 'w+') as configfile:
-        config.write(configfile)
-
-#blank nutexbFile
-blankFile = os.getcwd() + r"\blank.nutexb"
-if (not os.path.isfile(blankFile)):
-    message(type = "ERROR",text = "blank.nutexb is missing!")
-    root.destroy()
-    sys.exit("No blank nutexb")
+        sys.exit("No blank nutexb")
 
 
-#search and destination directory functions
-root.searchDir = config["DEFAULT"]["searchDir"]
-root.destDir = config["DEFAULT"]["destDir"]
+    #create output file
+    outputFile = open('output.txt','w+')
+    outputFile.close()
+
+
 def HasValidSearch():
     validPath = os.path.isdir(root.searchDir)
     if (validPath):
@@ -142,7 +127,7 @@ def HasValidDest():
 def saveSearch():
     #Replace the textureListFile contents with the contents of our GUI
     textureListFile = open('textureList.txt','w+')
-    textureListFile.write(textureEntry.get("1.0","end-1c"))
+    textureListFile.write(root.textureEntry.get("1.0","end-1c"))
     textureListFile.close()
     print("Updated search file")
 def setSearch():
@@ -150,72 +135,33 @@ def setSearch():
     root.searchDir = filedialog.askdirectory(title = "Search")
     if (root.searchDir != ""):
         validColor = "black" if HasValidSearch() else "red"
-        search_label.config(text = truncate(root.searchDir), fg = validColor)
+        root.search_label.config(text = truncate(root.searchDir), fg = validColor)
         
     config.set("DEFAULT","searchDir",root.searchDir)
     with open('config.ini', 'w+') as configfile:
         config.write(configfile)
         
     #when choosing a new directory, remove DNE tags
-    newEntry = textureEntry.get("1.0","end-1c")
+    newEntry = root.textureEntry.get("1.0","end-1c")
     newEntry = newEntry.replace("$DNE_","")
-    textureEntry.delete("1.0","end")
-    textureEntry.insert("1.0",newEntry)
+    root.textureEntry.delete("1.0","end")
+    root.textureEntry.insert("1.0",newEntry)
     saveSearch()
     
 def setDest():
     root.destDir = filedialog.askdirectory(title = "Destination")
     if (root.destDir != ""):
         validColor = "black" if HasValidDest() else "red"
-        dest_label.config(text = truncate(root.destDir), fg = validColor)
+        root.dest_label.config(text = truncate(root.destDir), fg = validColor)
         
     config.set("DEFAULT","destDir",root.destDir)
     with open('config.ini', 'w+') as configfile:
         config.write(configfile)
 
 
-#GUI
-
-pythonInfo = "Python: " + sys.version
-status = Label(root, text=truncate(pythonInfo,E,14,False), bd=1, relief=SUNKEN, anchor=E)
-status.pack(side = BOTTOM, fill=X)
-
-#scrollFrame = PanedWindow(orient = VERTICAL,borderwidth=10,width = 40)  
-#scrollFrame.pack(side = RIGHT,fill = Y, expand = 1)  
-#scroll = Scrollbar(scrollFrame)
-#scroll.pack(side = RIGHT, fill=Y)
-
-searchFrame = PanedWindow(orient = VERTICAL,borderwidth=10,width = root.width/2)  
-searchFrame.pack(side = LEFT, fill = Y, expand = 1)  
-searchFrame_label = Label(root, text="Set Directories to Search / Copy To", bd=1, relief=SUNKEN, anchor=N)
-searchFrame.add(searchFrame_label)
-  
-search_label = Label(searchFrame,width=50,text=truncate(root.searchDir))
-dest_label = Label(searchFrame,width=50,text=truncate(root.destDir))
-search_btn = Button(searchFrame, text="Set Search Directory", command=setSearch)
-dest_btn = Button(searchFrame, text="Set Destination Directory", command=setDest)
-searchFrame.add(search_btn)
-searchFrame.add(search_label)
-searchFrame.add(dest_btn)
-searchFrame.add(dest_label)
-
-
-listFrame = PanedWindow(orient = VERTICAL,borderwidth=10,width = (root.width/2))  
-listFrame.pack(side = TOP,fill = Y, expand = 1)
-listFrame_label = Label(root, text="Files to Find (leave blank for all files)", bd=1, relief=SUNKEN)
-listFrame.add(listFrame_label)   
-
-textureEntry = ScrolledText(listFrame, bd = 2)  
-listFrame.add(textureEntry)
-
-#textureEntry.configure(yscrollcommand=scroll.set)
-  
-#scroll.config(command=textureEntry.yview,width=40)
-#scrollFrame.add(scroll)
-    
-#populate textureEntry with textureFile contents
+#populate root.textureEntry with textureFile contents
 def readTexturesToGUI():
-    textureEntry.delete("1.0","end-1c")
+    root.textureEntry.delete("1.0","end-1c")
     textureListFile = open('textureList.txt','r')
     textures = textureListFile.readlines()
     textures = [texture.rstrip() for texture in textures]
@@ -223,12 +169,56 @@ def readTexturesToGUI():
     #Populate textfile without adding an extra new line at the end
     for i in range(len(textures)):
         newLine='\n' if i<len(textures)-1 else ''
-        textureEntry.insert(END,textures[i]+newLine)
+        root.textureEntry.insert(END,textures[i]+newLine)
 
-#makesure it exists first
-textureListFile = open('textureList.txt','a+')
-textureListFile.close()
-readTexturesToGUI()
+#GUI
+def startGUI():
+    pythonInfo = "Python: " + sys.version
+    root.status = Label(root, text=truncate(pythonInfo,E,14,False), bd=1, relief=SUNKEN, anchor=E)
+    root.status.pack(side = BOTTOM, fill=X)
+
+    #scrollFrame = PanedWindow(orient = VERTICAL,borderwidth=10,width = 40)  
+    #scrollFrame.pack(side = RIGHT,fill = Y, expand = 1)  
+    #scroll = Scrollbar(scrollFrame)
+    #scroll.pack(side = RIGHT, fill=Y)
+
+    searchFrame = PanedWindow(orient = VERTICAL,borderwidth=10,width = root.width/2)  
+    searchFrame.pack(side = LEFT, fill = Y, expand = 1)  
+    searchFrame_label = Label(root, text="Set Directories to Search / Copy To", bd=1, relief=SUNKEN, anchor=N)
+    searchFrame.add(searchFrame_label)
+      
+    root.search_label = Label(searchFrame,width=50,text=truncate(root.searchDir))
+    root.dest_label = Label(searchFrame,width=50,text=truncate(root.destDir))
+    search_btn = Button(searchFrame, text="Set Search Directory", command=setSearch)
+    dest_btn = Button(searchFrame, text="Set Destination Directory", command=setDest)
+    searchFrame.add(search_btn)
+    searchFrame.add(root.search_label)
+    searchFrame.add(dest_btn)
+    searchFrame.add(root.dest_label)
+
+
+    listFrame = PanedWindow(orient = VERTICAL,borderwidth=10,width = (root.width/2))  
+    listFrame.pack(side = TOP,fill = Y, expand = 1)
+    listFrame_label = Label(root, text="Files to Find (leave blank for all files)", bd=1, relief=SUNKEN)
+    listFrame.add(listFrame_label)   
+
+    root.textureEntry = ScrolledText(listFrame, bd = 2)  
+    listFrame.add(root.textureEntry)
+
+    #root.textureEntry.configure(yscrollcommand=scroll.set)
+      
+    #scroll.config(command=root.textureEntry.yview,width=40)
+    #scrollFrame.add(scroll)
+    
+    #makesure it exists first
+    textureListFile = open('textureList.txt','a+')
+    textureListFile.close()
+    readTexturesToGUI()
+
+
+    #create run button
+    run_btn = Button(searchFrame, text="Run", command=run,anchor=S)
+    searchFrame.add(run_btn,pady=30)
 
 imageExtensions = ["png", "jpg", "gif", "dds",
                    "tga", "tiff", "tco", "bmp"]
@@ -236,14 +226,12 @@ def ValidImage(img):
     ext = img[len(img)-3:len(img)]
     return ext in imageExtensions
 
-outputFilePath="output.txt"
-#create output file
-outputFile = open('output.txt','w+')
-outputFile.close()
 def printAndWrite(string,color="black"):
     print(string)
-    status.config(text = string, fg = color)
-    with open(outputFilePath, "a") as file:
+    if (root.fromOutside):
+        return
+    root.status.config(text = string, fg = color)
+    with open("output.txt", "a") as file:
         file.write(string)
         file.write("\n")
         
@@ -262,10 +250,10 @@ def run():
     textures = [texture.rstrip() for texture in textures]
     textureListFile.close()
 
-    emptyList=False
+    root.emptyList=False
     #if textureList is blank, set the target list to ALL the files in a folder
     if (len(textures)<1):
-        emptyList=True
+        root.emptyList=True
         mypath = root.searchDir
         files = [f for f in listdir(mypath) if isfile(join(mypath, f))]
         for f in files:
@@ -275,6 +263,50 @@ def run():
     while("" in textures) :
         textures.remove("")
 
+    BatchImg(textures)
+
+def init(searchDir="",destDir="",currentDir=""):
+    root.title("img2nutexbGUI")
+
+    root.searchDir = searchDir
+    root.destDir = destDir
+    root.currentDir = currentDir if currentDir != "" else os.getcwd()
+    root.fromOutside = currentDir != ""
+
+    if (not root.fromOutside):
+        root.iconbitmap("icon.ico")
+        root.width=600
+        root.height=250
+        root.geometry(str(root.width)+"x"+str(root.height))
+
+        #create a config if necessary
+        if (not os.path.isfile(root.currentDir + r"\config.ini")):
+            CreateConfig()
+        config.read('config.ini')
+
+        #search and destination directory functions
+        root.searchDir = config["DEFAULT"]["searchDir"]
+        root.destDir = config["DEFAULT"]["destDir"]
+    else:
+        config.read(currentDir+'config.ini')
+
+
+    root.imgnutexbLocation = config["DEFAULT"]["img2nutexbLocation"]
+    print("imgnutexbLocation: "+root.imgnutexbLocation)
+    if not "root.maxThreads" in config["DEFAULT"]:
+        config["DEFAULT"]["root.maxThreads"]="4"
+        with open('config.ini', 'w+') as configfile:
+            config.write(configfile)
+    root.maxThreads = int(config["DEFAULT"]["maxThreads"])
+
+    progressroot.withdraw()
+    progressroot.minsize(250,100)
+    root.withdraw()
+    root.emptyList=False
+
+    #BatchImg(textures,True)
+
+def BatchImg(textures):
     rewriteList=False
     overwritePrompt=True
     overwriteFiles=True
@@ -390,11 +422,11 @@ def run():
             continue
 
         #clone blank file
-        shutil.copy(blankFile,newNutexb)
+        shutil.copy(root.blankFile,newNutexb)
 
         
         #run program on it depending on if the text file ends in dds
-        subcall = [imgnutexbLocation,"-n "+internalName,targetFile,newNutexb]
+        subcall = [root.imgnutexbLocation,"-n "+internalName,targetFile,newNutexb]
         if len(subcallExtra)>0:
             for e in subcallExtra:
                 subcall.append(e)
@@ -438,9 +470,12 @@ def run():
     time.sleep(1.0)
     print("Images converted")
 
+    progressroot.withdraw()
+    if (root.fromOutside):
+        return
 
     #Only rewrite if necessary
-    if (rewriteList==True and emptyList==False):
+    if (rewriteList==True and root.emptyList==False):
         textureListFile = open('textureList.txt','w')
         textureListFile.close()
         #Rewrite textureListFile
@@ -457,7 +492,6 @@ def run():
     #sys.exit("success")
     message("Finished!")
     root.deiconify()
-    progressroot.withdraw()
 
 imgThread = None
 def UpdateProgressLabel(v):
@@ -468,7 +502,7 @@ def UpdateProgressLabel(v):
 
 def StartThreads():
     subthreads = []
-    for i in (range(maxThreads)):
+    for i in (range(root.maxThreads)):
         subthread=threading.Thread(target=BatchImgSubCall, args=())
         subthreads.append(subthread)
         subthread.start()
@@ -498,9 +532,6 @@ def BatchImgSubCall():
         progressroot.queue.task_done()
         
 
-#create run button
-run_btn = Button(searchFrame, text="Run", command=run,anchor=S)
-searchFrame.add(run_btn,pady=30)
 
 #on window closed
 def onClosed():
@@ -509,6 +540,14 @@ def onClosed():
     sys.exit("User exited")
     
 
-root.protocol("WM_DELETE_WINDOW", onClosed)
-root.mainloop()
+def Main():
+    init()
+    root.deiconify()
+    ValidatePorgram()
+    startGUI()
+
+if __name__ == '__main__':
+    Main()
+    root.protocol("WM_DELETE_WINDOW", onClosed)
+    root.mainloop()
 

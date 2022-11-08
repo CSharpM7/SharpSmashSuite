@@ -249,6 +249,14 @@ def BatchImg():
     subcallExtra=[]
     for i in root.materials:
         textures.append(root.materials[i])
+
+    from img2nutexbGUI import batchimg
+    sys.path.insert(0, '/img2nutexbGUI/')
+    batchimg.init(root.searchDir,root.destinationDir,os.getcwd() + r"/img2nutexbGUI/")
+    batchimg.ValidatePorgram()
+    batchimg.BatchImg(textures)
+
+    return
     for i in range(len(textures)):
         t = textures[i]
         #ignore files with the common tag
@@ -441,11 +449,16 @@ def quit():
     root.destroy()
 
 def Main():
-    Init()
+    #Init()
+    if (True):
+        root.destinationDir = r"D:\Users\Ryan\Documents\SmashClub\hack\stagemodTest\FrozenDream\stage\kirby_fountain\battle\model\bg1_set - Copy"
+        GetMaterialFile()
+        ReadMaterialFile()
+        root.searchDir = r"D:\Users\Ryan\Documents\SmashClub\hack\stagemodTest\models\FrozenFoD"
+
     BatchImg()
-    root.withdraw()
     Numatb_CreateMatl()
-    MagicModel()
+    #MagicModel()
     messagebox.showinfo(root.title(),"Finished!")
     webbrowser.open(root.destinationDir)
 
