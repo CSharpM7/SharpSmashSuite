@@ -6,6 +6,7 @@ import os.path
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import ttk
 from pathlib import Path
 
 import sys
@@ -13,7 +14,11 @@ import webbrowser
 
 import shutil
 import subprocess
+from multiprocessing import Process
+import threading
 import imghdr
+
+from queue import Queue
 
 import configparser
 config = configparser.ConfigParser()
@@ -22,10 +27,33 @@ if (not os.path.isfile(os.getcwd() + r"/img2nutexbGUI/config.ini")):
     sys.exit("No img")
 config.read(os.getcwd() +'/img2nutexbGUI/config.ini')
 imgnutexbLocation = config["DEFAULT"]["img2nutexbLocation"]
+if not "maxThreads" in config["DEFAULT"]:
+    config["DEFAULT"]["maxThreads"]="4"
+    with open(os.getcwd() +'/img2nutexbGUI/config.ini', 'w+') as configfile:
+        config.write(configfile)
+maxThreads = int(config["DEFAULT"]["maxThreads"])
+
+def truncate(string,direciton=W,limit=20,ellipsis=True):
+    if (len(string) < 3):
+        return string
+    text = ""
+    addEllipsis = "..." if (ellipsis) else ""
+    if direciton == W:
+        text = addEllipsis+string[len(string)-limit:len(string)]
+    else:
+        text = string[0:limit]+addEllipsis
+    return text
 
 #create ui for program
 root = Tk()
 root.title("Sharp Smash Suite")
+root.minsize(250,100)
+#root.header = Label(root,text="This will take awhile, sit back and relax!")
+#root.header.pack(expand=True)
+#root.footer = Label(root, text="", bd=1, relief=SUNKEN, anchor=N)
+#root.footer.pack(side = BOTTOM, fill=X)
+
+
 root.withdraw()
 
 root.destinationDir = ""
@@ -37,14 +65,14 @@ root.hasMesh=False
 imgnutexbLocation = os.getcwd() + "/img2nutexbGUI/img2nutexb.exe"
 
 def GetMaterialFile():
-    if (False):
+    root.materialFile = root.destinationDir+"/materials.txt"
+    if (not os.path.isfile(root.materialFile)):
         messagebox.showinfo(root.title(),"Please select your materials.txt exported via Blender")
         ftypes = [    
             ('materials list', ["*.txt"])
         ]
         file = filedialog.askopenfile(title = "Select materials.txt",filetypes = ftypes)
         root.materialFile = file.name if file else ""
-    root.materialFile = root.destinationDir+"/materials.txt"
     if (root.materialFile == ""):
         root.destroy()
         sys.exit("No model")
@@ -197,6 +225,10 @@ def ValidImage(img):
     ext = img[len(img)-3:len(img)]
     return ext in imageExtensions
      
+def AppendBlank(*lists):
+    for l in lists:
+        l.append("")
+
 #main functions
 def BatchImg():  
     blankFile = os.getcwd() + r"\img2nutexbGUI\blank.nutexb"  
@@ -211,6 +243,10 @@ def BatchImg():
     print("Running...")
     #For each texture, see if we can run the program
     textures=[]
+    subcallName=[]
+    subcallTarget=[]
+    subcallNewFile=[]
+    subcallExtra=[]
     for i in root.materials:
         textures.append(root.materials[i])
     for i in range(len(textures)):
@@ -218,10 +254,12 @@ def BatchImg():
         #ignore files with the common tag
         if (t.find("/common/")>-1):
             print(t + " is a common file; skipping")
+            #AppendBlank(subcallName,subcallTarget,subcallNewFile)
             continue
         #ignore files we know do not exist
         if (t.startswith("$DNE_")):
             print(t + " has DNE tag; skipping")
+            #AppendBlank(subcallName,subcallTarget,subcallNewFile)
             continue
 
         #find the desired new name
@@ -246,24 +284,26 @@ def BatchImg():
                 
             if (overwriteFiles == False):
                 print(t + " exists and will not overwrite")
+                #AppendBlank(subcallName,subcallTarget,subcallNewFile)
                 continue
             
 
         #if search target does not have an extension, let's find it
         if (t.find(".")<0):
-            for (dirpath, dirnames, filenames) in os.walk(root.searchDir):
+            filenames = [f for f in os.listdir(root.searchDir) if os.path.isfile(os.path.join(root.searchDir, f))]
+            #for (dirpath, dirnames, filenames) in os.walk(root.searchDir):
                 #print([os.path.join(dirpath, file) for file in filenames])
-                for filename in filenames:
-                    split_tup = os.path.splitext(filename)
-                    basename = split_tup[0]
-                    if (basename == t):
-                        #Set rewrite list to true, helps prevent looping through all files in the future
-                        rewriteList=True
-                        #update t
-                        t = t+split_tup[1]
-                        #update the item in the list
-                        textures[i] = t
-                        break
+            for filename in filenames:
+                split_tup = os.path.splitext(filename)
+                basename = split_tup[0]
+                if (basename == t):
+                    #Set rewrite list to true, helps prevent looping through all files in the future
+                    rewriteList=True
+                    #update t
+                    t = t+split_tup[1]
+                    #update the item in the list
+                    textures[i] = t
+                    break
                     
 
              
@@ -274,47 +314,141 @@ def BatchImg():
         #if file doesn't exist, skip
         if (not fileNameExists):
             print(t + " does not exist")
+            #AppendBlank(subcallName,subcallTarget,subcallNewFile)
             continue
         #if it's not an image file, ignore it
         if (not ValidImage(targetFile)):
             print(os.path.basename(targetFile) + " is not an image file")
+            #AppendBlank(subcallName,subcallTarget,subcallNewFile)
             continue
+
+        internalName = os.path.splitext(os.path.basename(targetFile))[0]
+        print(t + " was found")
+
+        subcallName.append(internalName)
+        subcallTarget.append(targetFile)
+        subcallNewFile.append(newNutexb)
         
+    if (useDDSPrompt):
+        useDDSPrompt = False
+        useDDSOption = messagebox.askyesno(root.title(), "Use img2nutexb DDS options for DDS Files? (Some failed dds conversions can be fixed by not using these options)",icon ='info')
+    if (useDDSOption):
+        subcallExtra.append("-d")
+        subcallExtra.append("-u")
+
+    root.deiconify()
+
+    #for i in range(len(subcallTarget)):
+    root.queue = Queue(maxsize=0)
+
+    for i in range(len(subcallName)):
+        internalName = subcallName[i]
+        targetFile = subcallTarget[i]
+        newNutexb = subcallNewFile[i]
+        if (internalName == "" or targetFile == "" or newNutexb == ""):
+            continue
+
         #clone blank file
         shutil.copy(blankFile,newNutexb)
 
-        print("Converting "+os.path.basename(targetFile))
-        internalName = os.path.splitext(os.path.basename(targetFile))[0]
         
         #run program on it depending on if the text file ends in dds
         subcall = [imgnutexbLocation,"-n "+internalName,targetFile,newNutexb]
-        convertedDDS = ""
-        if (split_tup[1] == ".dds"):
-            if (useDDSPrompt):
-                useDDSPrompt = False
-                useDDSOption = messagebox.askyesno(root.title(), "Use img2nutexb DDS options for DDS Files? (Some failed dds conversions can be fixed by not using these options)",icon ='info')
-            if (useDDSOption):
-                subcall.append("-d")
-                subcall.append("-u")
-                convertedDDS = " using dds options"
-        #output any errors to a textfile
-        with open('output.txt', 'a+') as stdout_file:
-            try:
-                process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
-            except:
-                print(os.path.basename(newNutexb) + " can't be converted; might be open in another program")
-            #print(process_output.__dict__)
-                
-        print("Created "+os.path.basename(newNutexb) + convertedDDS)
+        if len(subcallExtra)>0:
+            for e in subcallExtra:
+                subcall.append(e)
+        root.queue.put(subcall)
 
+    imgThread = threading.Thread(target=StartThreads, args=())
+    imgThread.start()
+
+    root.grid()
+    root.progressBar = ttk.Progressbar(
+        root,
+        orient='horizontal',
+        mode='determinate',
+        length=280
+    )
+    root.progressBar.grid(column=0, row=0, columnspan=2, padx=10, pady=20)
+    root.progressBar['value'] = 0
+    root.Progress=0
+
+    root.progressLabel = Label(root, text=UpdateProgressLabel(root.progressBar['value']))
+    root.progressLabel.grid(column=0, row=1, columnspan=2)
+    root.deiconify()
+    root.protocol("WM_DELETE_WINDOW", quit)
+
+    start = time.time()
+
+    root.footer = Label(root, text="This could take awhile...", bd=1, relief=SUNKEN, anchor=N)
+    root.footer.grid(row=2,columnspan=2,sticky="ew")
+
+    while imgThread.is_alive():
+        root.update()
+        root.progressBar['value'] = (root.Progress*100)
+        root.progressLabel['text'] = UpdateProgressLabel(root.progressBar['value'])
+        elapsed = truncate(str(time.time()-start),E,5,False)
+        root.footer.config(text="Time elapsed: "+elapsed+"s")
+        pass
+
+    root.progressBar['value'] = 100
+    root.progressLabel['text'] = UpdateProgressLabel(root.progressBar['value'])
+    root.update()
+    time.sleep(1.0)
     print("Images converted")
+
+imgThread = None
+def UpdateProgressLabel(v):
+
+    labelText = f"{v}"
+    labelText = truncate(str(root.progressBar['value']),E,5,False)
+    return f"Current Progress: "+labelText+"%"
+
+def StartThreads():
+    subthreads = []
+    for i in (range(maxThreads)):
+        subthread=threading.Thread(target=BatchImgSubCall, args=())
+        subthreads.append(subthread)
+        subthread.start()
+    # checks whether thread is alive #
+    startSize = root.queue.qsize()
+    while True:
+        if root.queue.qsize()==0:
+            break
+        else:
+            root.Progress = 1-(float(root.queue.qsize())/float(startSize))
+    root.Progress = 1
+    print("Finished Conversions")
+
+
+import time
+def BatchImgSubCall():
+    while True:
+        subcall = root.queue.get()
+        print("Converting "+os.path.basename(subcall[2]))
+        try:
+            process_output = subprocess.run(subcall)#, stdout=stdout_file, stderr=stdout_file, text=True)
+        except:
+            print(os.path.basename(newNutexb) + " can't be converted; might be open in another program")
+
+        convertedDDS = "" if len(subcall)>4 else " using dds options"
+        print("Created "+os.path.basename(subcall[3]) + convertedDDS)
+        root.queue.task_done()
         
+def quit():
+    sys.exit("user exited")
+    imgThread.kill()
+    root.destroy()
+
 def Main():
     Init()
     BatchImg()
+    root.withdraw()
     Numatb_CreateMatl()
     MagicModel()
     messagebox.showinfo(root.title(),"Finished!")
     webbrowser.open(root.destinationDir)
 
-Main()
+if __name__ == '__main__':
+    Main()
+    root.mainloop()

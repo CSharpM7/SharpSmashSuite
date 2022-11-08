@@ -445,7 +445,10 @@ class SharpSmashSuite_OT_addMap(Operator):
             return {'FINISHED'}
         
         for obj in bpy.context.selected_objects:
-            if obj.data.uv_layers:
+            if ("colorset" not in self.newname.lower()):
+                if not obj.data.uv_layers:
+                    report(self,{'WARNING'}, obj.name + " cannot have uv maps")
+                    continue
                 if (not self.newname in obj.data.uv_layers):
                     print("Create key")
                     obj.data.uv_layers.new(name=self.newname)
@@ -453,10 +456,21 @@ class SharpSmashSuite_OT_addMap(Operator):
                     report(self,{'WARNING'}, obj.name + " already has " + self.newname)
                     
                 obj.data.uv_layers[self.newname].active = True
+                report(self,{'INFO'}, "Baked maps added")
             else:
-                report(self,{'WARNING'}, obj.name + " has no maps")
+                if not obj.data.vertex_colors:
+                    report(self,{'WARNING'}, obj.name + " cannot have vertex colors")
+                    continue
+
+                if (not self.newname in obj.data.vertex_colors):
+                    print("Create key")
+                    obj.data.vertex_colors.new(name=self.newname)
+                else:
+                    report(self,{'WARNING'}, obj.name + " already has " + self.newname)
+                    
+                obj.data.vertex_colors[self.newname].active = True
+                report(self,{'INFO'}, "Vertex colors added")
             
-        report(self,{'INFO'}, "Baked maps added")
         return {'FINISHED'}
         
     def invoke(self, context, event):

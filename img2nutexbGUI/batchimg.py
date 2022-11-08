@@ -12,9 +12,15 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter.scrolledtext import ScrolledText
+from tkinter import ttk
 
 import configparser
 config = configparser.ConfigParser()
+
+
+from multiprocessing import Process
+import threading
+from queue import Queue
 
 #create initial GUI settings
 root = Tk()
@@ -30,8 +36,13 @@ defaultConfig = configparser.ConfigParser()
 defaultConfig['DEFAULT'] = {
     'img2nutexbLocation': defaultLocation,
     'searchDir' : "",
-    'destDir' : ""
+    'destDir' : "",
+    'maxThreads': "4"
     }
+
+progressroot = Tk()
+progressroot.withdraw()
+progressroot.minsize(250,100)
 
 def CreateConfig():
     print("creating valid config")
@@ -47,6 +58,11 @@ config.read('config.ini')
 #read in the config file to find the img program file
 imgnutexbLocation = config["DEFAULT"]["img2nutexbLocation"]
 print("imgnutexbLocation: "+imgnutexbLocation)
+if not "maxThreads" in config["DEFAULT"]:
+    config["DEFAULT"]["maxThreads"]="4"
+    with open('config.ini', 'w+') as configfile:
+        config.write(configfile)
+maxThreads = int(config["DEFAULT"]["maxThreads"])
 
 #truncate strings for labels
 def truncate(string,direciton=W,limit=20,ellipsis=True):
@@ -266,6 +282,12 @@ def run():
     useDDSOption=True
     renamePrompt=True
     rename=True
+
+    subcallName=[]
+    subcallTarget=[]
+    subcallNewFile=[]
+    subcallExtra=[]
+
     printAndWrite("Running...")
     #For each texture, see if we can run the program
     for i in range(len(textures)):
@@ -339,33 +361,83 @@ def run():
             printAndWrite(os.path.basename(targetFile) + " is not an image file")
             continue
         
+
+        internalName = os.path.splitext(os.path.basename(targetFile))[0]
+        subcallName.append(internalName)
+        subcallTarget.append(targetFile)
+        subcallNewFile.append(newNutexb)
+        
+    if (useDDSPrompt):
+        useDDSPrompt = False
+        useDDSOption = messagebox.askyesno(root.title(), "Use img2nutexb DDS options for DDS Files? (Some failed dds conversions can be fixed by not using these options)",icon ='info')
+    if (useDDSOption):
+        subcallExtra.append("-d")
+        subcallExtra.append("-u")
+
+    root.withdraw()
+        
+
+
+    progressroot.deiconify()
+
+    progressroot.queue = Queue(maxsize=0)
+
+    for i in range(len(subcallName)):
+        internalName = subcallName[i]
+        targetFile = subcallTarget[i]
+        newNutexb = subcallNewFile[i]
+        if (internalName == "" or targetFile == "" or newNutexb == ""):
+            continue
+
         #clone blank file
         shutil.copy(blankFile,newNutexb)
 
-        printAndWrite("Converting "+os.path.basename(targetFile))
-        internalName = os.path.splitext(os.path.basename(targetFile))[0]
         
         #run program on it depending on if the text file ends in dds
         subcall = [imgnutexbLocation,"-n "+internalName,targetFile,newNutexb]
-        convertedDDS = ""
-        if (split_tup[1] == ".dds"):
-            if (useDDSPrompt):
-                useDDSPrompt = False
-                useDDSOption = messagebox.askyesno(root.title(), "Use img2nutexb DDS options for DDS Files? (Some failed dds conversions can be fixed by not using these options)",icon ='info')
-            if (useDDSOption):
-                subcall.append("-d")
-                subcall.append("-u")
-                convertedDDS = " using dds options"
-        #output any errors to a textfile
-        with open('output.txt', 'a+') as stdout_file:
-            try:
-                process_output = subprocess.run(subcall, stdout=stdout_file, stderr=stdout_file, text=True)
-            except:
-                print(os.path.basename(newNutexb) + " can't be converted; might be open in another program")
-            #print(process_output.__dict__)
-                
-        printAndWrite("Created "+os.path.basename(newNutexb) + convertedDDS)
-        
+        if len(subcallExtra)>0:
+            for e in subcallExtra:
+                subcall.append(e)
+        progressroot.queue.put(subcall)
+
+    imgThread = threading.Thread(target=StartThreads, args=())
+    imgThread.start()
+
+    progressroot.grid()
+    progressroot.progressBar = ttk.Progressbar(
+        progressroot,
+        orient='horizontal',
+        mode='determinate',
+        length=280
+    )
+    progressroot.progressBar.grid(column=0, row=0, columnspan=2, padx=10, pady=20)
+    progressroot.progressBar['value'] = 0
+    progressroot.Progress=0
+
+    progressroot.progressLabel = Label(progressroot, text=UpdateProgressLabel(progressroot.progressBar['value']))
+    progressroot.progressLabel.grid(column=0, row=1, columnspan=2)
+    progressroot.deiconify()
+    progressroot.protocol("WM_DELETE_WINDOW", quit)
+
+    start = time.time()
+
+    progressroot.footer = Label(progressroot, text="This could take awhile...", bd=1, relief=SUNKEN, anchor=N)
+    progressroot.footer.grid(row=2,columnspan=2,sticky="ew")
+
+    while imgThread.is_alive():
+        progressroot.update()
+        progressroot.progressBar['value'] = (progressroot.Progress*100)
+        progressroot.progressLabel['text'] = UpdateProgressLabel(progressroot.progressBar['value'])
+        elapsed = truncate(str(time.time()-start),E,5,False)
+        progressroot.footer.config(text="Time elapsed: "+elapsed+"s")
+        pass
+
+    progressroot.progressBar['value'] = 100
+    progressroot.progressLabel['text'] = UpdateProgressLabel(progressroot.progressBar['value'])
+    progressroot.update()
+    time.sleep(1.0)
+    print("Images converted")
+
 
     #Only rewrite if necessary
     if (rewriteList==True and emptyList==False):
@@ -381,9 +453,50 @@ def run():
         textureListFile.close()
         readTexturesToGUI()
 
-    #root.withdraw()
+    #progressroot.withdraw()
     #sys.exit("success")
     message("Finished!")
+    root.deiconify()
+    progressroot.withdraw()
+
+imgThread = None
+def UpdateProgressLabel(v):
+
+    labelText = f"{v}"
+    labelText = truncate(str(progressroot.progressBar['value']),E,5,False)
+    return f"Current Progress: "+labelText+"%"
+
+def StartThreads():
+    subthreads = []
+    for i in (range(maxThreads)):
+        subthread=threading.Thread(target=BatchImgSubCall, args=())
+        subthreads.append(subthread)
+        subthread.start()
+    # checks whether thread is alive #
+    startSize = progressroot.queue.qsize()
+    while True:
+        if progressroot.queue.qsize()==0:
+            break
+        else:
+            progressroot.Progress = 1-(float(progressroot.queue.qsize())/float(startSize))
+    progressroot.Progress = 1
+    print("Finished Conversions")
+
+
+import time
+def BatchImgSubCall():
+    while True:
+        subcall = progressroot.queue.get()
+        print("Converting "+os.path.basename(subcall[2]))
+        try:
+            process_output = subprocess.run(subcall)#, stdout=stdout_file, stderr=stdout_file, text=True)
+        except:
+            print(os.path.basename(newNutexb) + " can't be converted; might be open in another program")
+
+        convertedDDS = "" if len(subcall)>4 else " using dds options"
+        print("Created "+os.path.basename(subcall[3]) + convertedDDS)
+        progressroot.queue.task_done()
+        
 
 #create run button
 run_btn = Button(searchFrame, text="Run", command=run,anchor=S)
