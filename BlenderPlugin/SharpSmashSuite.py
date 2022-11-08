@@ -6,6 +6,7 @@ from bpy.types import Operator
 from bpy.props import CollectionProperty
 import bmesh
 import builtins as __builtin__
+import os
 
 bl_info = {
     "name": "Sharp Smash Suite",
@@ -161,8 +162,9 @@ def GetImageNodeForTree(node_tree):
 def getBasename(imageNode):
     #get the filepath to that image
     imageFile = imageNode.image.filepath
-    folder = imageFile.rfind("\\")+1
+    folder = imageFile.rfind(r"/")+1
     imageBaseName = imageFile[folder:len(imageFile)]
+    print(imageBaseName)
     #remove extension
     ext = (imageBaseName.find('.'))
     return imageBaseName[0:ext]

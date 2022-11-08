@@ -182,6 +182,8 @@ def Numatb_CreateMatl():
 
     print("Numatb created")
 
+def Magic_SortByLabel(e):
+    return e.material_label
 def MagicModel():
     from MagicModel import MagicModel
     sys.path.insert(0, '/img2nutexbGUI/')

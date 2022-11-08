@@ -44,6 +44,8 @@ def setDestinationDir():
 #Sort by Name/Label for all meshes and materials
 def SortByName(e):
     return e.name
+def SortByMeshName(e):
+    return e.mesh_object_name
 def SortByLabel(e):
     return e.material_label
 
@@ -59,6 +61,7 @@ def Magic():
             suffix = (newName.find('.0'))
             newName = newName[0:suffix] if suffix>-1 else newName
             modl_entry.material_label = newName
+        modl.entries.sort(key=SortByMeshName)
         modl.save(root.destinationDir+"/model.numdlb")
         FinishMessage+="\n All models have their material set to their mesh's name"
 
