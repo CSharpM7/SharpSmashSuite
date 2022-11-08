@@ -41,38 +41,53 @@ def setDestinationDir():
         root.destroy()
         sys.exit("No model")
         
-setDestinationDir()
-
-FinishMessage = "Magic Model finished!"
-#Assign all models their material based on their mesh's name
-if (root.hasModel):
-    modl = ssbh_data_py.modl_data.read_modl(root.destinationDir+"/model.numdlb")
-    modl.save("model_old.numdlb")
-    for modl_entry in modl.entries:
-        newName = modl_entry.mesh_object_name
-        suffix = (newName.find('.0'))
-        newName = newName[0:suffix] if suffix>-1 else newName
-        modl_entry.material_label = newName
-    modl.save(root.destinationDir+"/model.numdlb")
-    FinishMessage+="\n All models have their material set to their mesh's name"
-
 #Sort by Name/Label for all meshes and materials
 def SortByName(e):
     return e.name
 def SortByLabel(e):
     return e.material_label
 
-if (root.hasMesh):
-    mesh = ssbh_data_py.mesh_data.read_mesh(root.destinationDir+"/model.numshb")
-    mesh.objects.sort(key=SortByName)
-    mesh.save(root.destinationDir+"/model.numshb")
-    FinishMessage+="\n Meshes have been sorted alphabetically"
 
-matl = ssbh_data_py.matl_data.read_matl(root.destinationDir+"/model.numatb")
-if (root.hasMaterial):
-    matl.entries.sort(key=SortByLabel)
-    matl.save(root.destinationDir+"/model.numatb")
-    FinishMessage+="\n Materials have been sorted alphabetically"
+def Magic():
+    FinishMessage = "Magic Model finished!"
+    #Assign all models their material based on their mesh's name
+    if (root.hasModel):
+        modl = ssbh_data_py.modl_data.read_modl(root.destinationDir+"/model.numdlb")
+        modl.save("model_old.numdlb")
+        for modl_entry in modl.entries:
+            newName = modl_entry.mesh_object_name
+            suffix = (newName.find('.0'))
+            newName = newName[0:suffix] if suffix>-1 else newName
+            modl_entry.material_label = newName
+        modl.save(root.destinationDir+"/model.numdlb")
+        FinishMessage+="\n All models have their material set to their mesh's name"
 
-messagebox.showinfo(root.title(),FinishMessage)
-webbrowser.open(root.destinationDir)
+    if (root.hasMesh):
+        mesh = ssbh_data_py.mesh_data.read_mesh(root.destinationDir+"/model.numshb")
+        mesh.objects.sort(key=SortByName)
+        mesh.save(root.destinationDir+"/model.numshb")
+        FinishMessage+="\n Meshes have been sorted alphabetically"
+
+    matl = ssbh_data_py.matl_data.read_matl(root.destinationDir+"/model.numatb")
+    if (root.hasMaterial):
+        matl.entries.sort(key=SortByLabel)
+        matl.save(root.destinationDir+"/model.numatb")
+        FinishMessage+="\n Materials have been sorted alphabetically"
+
+    messagebox.showinfo(root.title(),FinishMessage)
+    webbrowser.open(root.destinationDir)
+
+def Init(destinationDir=""):
+    if (destinationDir==""):
+        setDestinationDir()
+    else:
+        root.destinationDir=destinationDir
+        if (not IsValidDestination()):
+            messagebox.showerror(root.title(),"That folder doesn't contain a model,mesh or material file")
+            return
+    Magic()
+def Main():
+    Init()
+
+if __name__ == '__main__':
+    Main()
