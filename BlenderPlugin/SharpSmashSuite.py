@@ -7,6 +7,7 @@ from bpy.props import CollectionProperty
 import bmesh
 import builtins as __builtin__
 import os
+from pathlib import Path
 
 bl_info = {
     "name": "Sharp Smash Suite",
@@ -130,7 +131,7 @@ class SharpSmashSuite_PanelMisc(bpy.types.Panel):
         
         column = layout.column()
         column.operator("sharpmetroidsuite.reassign_operator",icon="OBJECT_DATAMODE")
-        #column.operator("sharpsmashsuite.vertex_operator", icon = "GROUP_VERTEX")
+        column.operator("sharpsmashsuite.find_operator", icon = "ZOOM_ALL")
         #column.operator("sharpsmashsuite.swap_operator", icon = "SPREADSHEET")  
         
     
@@ -812,6 +813,65 @@ class SharpMetroidSuite_OT_Reassign(Operator):
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
 
+class SharpSmashSuite_OT_find(Operator):
+    bl_label = "Find Textures"
+    bl_idname = "sharpsmashsuite.find_operator"
+    bl_description = """SONIC GENERATIONS
+    Finds textures based on material name. assumes files are suffixed as _dif.dds"""
+    
+    directory: bpy.props.StringProperty(
+    name="'filearchives' folder", 
+    #subtype="DIR_PATH", 
+    #options={'HIDDEN'}
+    )
+    
+    def execute(self,context):
+        if (HasNoObjectsSelected(self)):
+            return {'FINISHED'}
+    
+        for obj in bpy.context.selected_objects:     
+            material_slots = obj.material_slots
+            #For each material
+            for objMaterialSlot in material_slots:
+                objMaterial = objMaterialSlot.material
+                nodes = objMaterial.node_tree.nodes
+                imageNode = GetImageNodeForTree(objMaterial.node_tree)
+                #If there is no imageNode, create one based on the material name
+                if (imageNode == None):  
+                    path = self.directory + "\\" + objMaterial.name +"_dif.dds"
+                    filename = Path(path)
+                    if not filename.exists():
+                        report(self,{'WARNING'}, filename.name+" does not exist")
+                        continue
+                    #Make sure image can be loaded
+                    try:
+                        img = bpy.data.images.load(path)
+                    except:
+                        report(self,{'WARNING'}, "Cannot load image %s" % path)
+                        continue
+                        
+                    node_texture = nodes.new(type='ShaderNodeTexImage')
+                    node_texture.image = img
+                    node_texture.location = -400,150
+                    
+                    #Gee I sure hope this exists
+                    psdf = nodes.get("Principled BSDF")
+                    if psdf == None:
+                        report(self,{'WARNING'}, "No PSDF")
+                        continue
+                    
+                    links = objMaterial.node_tree.links
+                    output = node_texture.outputs[0]
+                    input = psdf.inputs[0]
+                    link = links.new(output, input)
+                    
+        report(self,{'INFO'}, "Textures Found")
+        return {'FINISHED'}
+    
+    def invoke(self,context,event):
+        self.filepath = "materials.txt"
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
 
 
 def draw_item(self, context):
@@ -824,7 +884,7 @@ SharpSmashSuite_OT_swap,SharpSmashSuite_OT_list,SharpSmashSuite_OT_separate,
 SharpSmashSuite_OT_vertex,SharpSmashSuite_OT_rename,SharpSmashSuite_OT_renameMaps,SharpSmashSuite_OT_addMap,
 SharpSmashSuite_OT_clean,SharpSmashSuite_OT_RenameMaterial,SharpSmashSuite_MENU_RenameMaterial,SharpSmashSuite_OT_RenameMaterial_confirm,
 SharpSmashSuite_OT_join,SharpSmashSuite_MENU_join,SharpSmashSuite_OT_join_confirm,
-SharpMetroidSuite_OT_Reassign
+SharpMetroidSuite_OT_Reassign,SharpSmashSuite_OT_find
 ]
 def register():
     for cls in classes:
