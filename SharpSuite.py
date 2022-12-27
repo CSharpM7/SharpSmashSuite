@@ -196,11 +196,6 @@ def BatchImg():
     for i in root.materials:
         textures.append(root.materials[i])
 
-    for filename in os.listdir(root.searchDir):
-        f = os.path.join(root.searchDir, filename)
-        if os.path.isfile(f) and ".dds.png" in f:
-            os.rename(f,f.replace(".dds.png",".png"))
-
     from img2nutexbGUI import batchimg
     sys.path.insert(0, '/img2nutexbGUI/')
     batchimg.init(root.searchDir,root.destinationDir,os.getcwd() + r"/img2nutexbGUI/")

@@ -307,6 +307,12 @@ def init(searchDir="",destDir="",currentDir=""):
     #BatchImg(textures,True)
 
 def BatchImg(textures):
+
+    for filename in os.listdir(root.searchDir):
+        f = os.path.join(root.searchDir, filename)
+        if os.path.isfile(f) and ".dds.png" in f:
+            os.rename(f,f.replace(".dds.png",".png"))
+
     rewriteList=False
     overwritePrompt=True
     overwriteFiles=True
@@ -530,7 +536,7 @@ def BatchImgSubCall():
         except:
             print(os.path.basename(newNutexb) + " can't be converted; might be open in another program")
 
-        convertedDDS = "" if len(subcall)>4 else " using dds options"
+        convertedDDS = " using dds options" if len(subcall)>4 else ""
         print("Created "+os.path.basename(subcall[3]) + convertedDDS)
         progressroot.queue.task_done()
         
