@@ -171,6 +171,8 @@ def Numatb_CreateMatl():
     currentEntry = root.matl.entries[0]
     for mat in root.materials:
         texture = root.materials[mat]
+        if ("." in texture):
+            texture = texture[0:texture.index(".")]
         newEntry = Numatb_Copy(currentEntry)
         newEntry.material_label = mat
         newEntry.textures[0].data = texture
@@ -193,6 +195,11 @@ def BatchImg():
     textures=[]
     for i in root.materials:
         textures.append(root.materials[i])
+
+    for filename in os.listdir(root.searchDir):
+        f = os.path.join(root.searchDir, filename)
+        if os.path.isfile(f) and ".dds.png" in f:
+            os.rename(f,f.replace(".dds.png",".png"))
 
     from img2nutexbGUI import batchimg
     sys.path.insert(0, '/img2nutexbGUI/')

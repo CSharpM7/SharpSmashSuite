@@ -335,7 +335,12 @@ def BatchImg(textures):
 
         #find the desired new name
         split_tup = os.path.splitext(t)
-        newNutexb = root.destDir + "/" +split_tup[0]+".nutexb"
+        basename = split_tup[0]
+        if "." in basename:
+            basesplit = os.path.splitext(basename)
+            if basesplit[0] != basesplit[1] and basesplit[1] != "":
+                basename = basesplit[0]
+        newNutexb = root.destDir + "/" +basename+".nutexb"
         newNutexb = newNutexb.lower()
 
         #replace nrm with nor
@@ -373,8 +378,6 @@ def BatchImg(textures):
                         #update the item in the list
                         textures[i] = t
                         break
-                    
-
              
         #create name of search target
         targetFile = root.searchDir + "/" + t

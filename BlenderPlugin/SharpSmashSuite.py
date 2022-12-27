@@ -162,13 +162,15 @@ def GetImageNodeForTree(node_tree):
 
 def getBasename(imageNode):
     #get the filepath to that image
-    imageFile = imageNode.image.filepath
-    folder = imageFile.rfind(r"/")+1
-    imageBaseName = imageFile[folder:len(imageFile)]
-    print(imageBaseName)
+    #imageFile = imageNode.image.filepath
+    #folder = imageFile.rfind(r"/")+1
+    #imageBaseName = imageFile[folder:len(imageFile)]
+    #print(imageBaseName)
     #remove extension
-    ext = (imageBaseName.find('.'))
-    return imageBaseName[0:ext]
+    #ext = (imageBaseName.find('.'))
+    #return imageBaseName[0:ext]
+    basename = os.path.basename(imageNode.image.filepath)
+    return basename
 
 class SharpSmashSuite_OT_list(Operator):
     bl_label = "Export Material List"
@@ -177,18 +179,23 @@ class SharpSmashSuite_OT_list(Operator):
     Useful with LazyMat to fill the spreadsheet with materials and textures, and
     Img2nutexb to retrieve texture files from a folder"""
     
-    filepath: bpy.props.StringProperty()
-    filename: bpy.props.StringProperty()
-    filter_glob: bpy.props.StringProperty(
-        default='*.txt',
-        options={'HIDDEN'}
-    )
-    directory: bpy.props.StringProperty(name="'filearchives' folder", 
-                subtype="DIR_PATH", options={'HIDDEN'})
+    #filepath: bpy.props.StringProperty()
+    #filename: bpy.props.StringProperty()
+    #filter_glob: bpy.props.StringProperty(
+    #    default='*.txt',
+    #    options={'HIDDEN'}
+    #)
+    #directory: bpy.props.StringProperty(name="'filearchives' folder", 
+    #            subtype="DIR_PATH", options={'HIDDEN'})
 
+    directory: bpy.props.StringProperty(
+    name="'filearchives' folder", 
+    #subtype="DIR_PATH", 
+    #options={'HIDDEN'}
+    )
     
     def execute(self,context):
-        
+        self.filepath = self.directory + "\materials.txt"
         if (HasNoObjectsSelected(self)):
             return {'FINISHED'}
         
