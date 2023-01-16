@@ -6,15 +6,27 @@
 
 Tested on Windows, but should work on most OSs that can run Python 3.9+
 
-Python 3.9+
+Python 3.9+ - Used everywhere in this suite
 
 [img2nutexb](https://github.com/jam1garner/img2nutexb) - Program required for using img2nutexbGUI
 
-[ssbh\_data\_py](https://github.com/ScanMountGoat/ssbh_data_py) - Running LazyNumdlb
+[ssbh\_data\_py](https://github.com/ScanMountGoat/ssbh_data_py) - Running MagicModel
 
-[MatLab and CrossMod](https://github.com/Ploaj/SSBHLib)  - (Not the math software) Running LazyMat and previewing models
+[MatLab] (https://github.com/Ploaj/SSBHLib)  - (Not the math software) Running LazyMat
 
 [StudioSB](https://github.com/Ploaj/StudioSB) - Importing models and creating numdlb files
+
+[ssbh_editor](https://github.com/ScanMountGoat/ssbh_editor)  - Easily preview models and edit material files
+
+Microsoft Excel - Only for Lazymat, but highly recommended for creating multiple materials
+
+### Optional but recommended
+
+[nutexb_cli.exe](https://github.com/jam1garner/nutexb) - Program required for using img2nutexbGU with DDS files
+
+[rustup](https://www.rust-lang.org/tools/install) used for building nutexb_cli
+
+
 
 ## Installation
 
@@ -58,14 +70,14 @@ This is when you can use SharpSuite.py to create a quick prototype to see how yo
 **Creating materials and textures:**
 1.  LazyMat - Create a numatb file. You'll use the exported material list to fill this out. This can be customized to keep a list of shaders.
 2.  Img2nutexbGUI - Convert several images at once to nutexb files
+3.  MagicModel - Reassigns meshs' their material label based on that mesh's name, and alphabetically sorts mesh and material files. This only works if Blender SSS was used on the mesh.
 
 **Preview:**
 1.  CrossMod/SSBH_Editor - After using LazyMat, LazyNumdlb, and StudioSB, preview the model
 
 **Finishing:**
-1.  MagicModel - Reassigns meshs' their material label based on that mesh's name, and alphabetically sorts mesh and material files. This only works if Blender SSS was used on the mesh.
-2.  LazyConfig - Creates a config.json to be used with file addition
-3.  UI Retrieve - Easily retrieves all relevant UI for your mod so you can replace it when finished
+1.  LazyConfig - Creates a config.json to be used with file addition
+2.  UI Retrieve - Easily retrieves all relevant UI for your mod so you can replace it when finished
 
 # Special Thanks
 
