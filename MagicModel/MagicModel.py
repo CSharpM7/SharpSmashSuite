@@ -78,7 +78,7 @@ def Magic():
         FinishMessage+="\n Materials have been sorted alphabetically"
 
     messagebox.showinfo(root.title(),FinishMessage)
-    webbrowser.open(root.destinationDir)
+    #webbrowser.open(root.destinationDir)
 
 def Init(destinationDir=""):
     if (destinationDir==""):

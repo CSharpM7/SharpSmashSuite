@@ -29,10 +29,12 @@ root.currentDir = os.getcwd()
 
 #assumedLocation of img program if no config
 defaultLocation = root.currentDir + "\img2nutexb.exe"
+defaultCliLocation = root.currentDir+"/nutexb_cli/nutexb_cli.exe"
 #default configuration
 defaultConfig = configparser.ConfigParser()
 defaultConfig['DEFAULT'] = {
     'img2nutexbLocation': defaultLocation,
+    'nutexbcliLocation': defaultCliLocation,
     'searchDir' : "",
     'destDir' : "",
     'root.maxThreads': "4"
@@ -76,6 +78,13 @@ def ValidExe():
         if (root.imgnutexbLocation.endswith(".exe")):
             return True
     return False
+#check to make sure that the program is a valid file
+def ValidCliExe():
+    if (not root.nutexbcliLocation): return False
+    if (os.path.isfile(root.nutexbcliLocation)):
+        if (root.nutexbcliLocation.endswith(".exe")):
+            return True
+    return False
         
 
 def ValidatePorgram():
@@ -93,6 +102,20 @@ def ValidatePorgram():
             message(type = "ERROR",text = "Selected file not valid")
             root.destroy()
             sys.exit("No img2nutexb.exe file")
+    #if we don't have nutexbCli here, then ask for it!
+    if (ValidCliExe() == False):
+        message(type = "Warning",text = "nutexb_cli.exe not found, please select it (this can be skipped)")
+        ftypes = [    
+            ('nutexb_cli program', ["*.exe"])
+        ]
+        file = filedialog.askopenfile(title = "Search",filetypes = ftypes)
+        root.nutexbcliLocation = file.name if file else ""
+        #if selected file is in valid, quit
+        if (not ValidCliExe()):
+            config.set("DEFAULT","nutexbcliLocation",defaultLocation)
+            #message(type = "ERROR",text = "Selected file not valid")
+            #root.destroy()
+            #sys.exit("No nutexb_cli.exe file")
 
         #write new location to config
         config.set("DEFAULT","img2nutexbLocation",root.imgnutexbLocation)
@@ -173,6 +196,8 @@ def readTexturesToGUI():
 
 #GUI
 def startGUI():
+    root.minsize(600, 250)
+
     pythonInfo = "Python: " + sys.version
     root.status = Label(root, text=truncate(pythonInfo,E,14,False), bd=1, relief=SUNKEN, anchor=E)
     root.status.pack(side = BOTTOM, fill=X)
@@ -215,10 +240,26 @@ def startGUI():
     textureListFile.close()
     readTexturesToGUI()
 
+    #create cli combo
+    root.varCli = IntVar(value=(1 if ValidCliExe else 0))
+    if (ValidCliExe):
+        root.checkCli = Checkbutton(searchFrame, text='Use nutexb_cli.exe',variable=root.varCli, onvalue=1, offvalue=0)
+        searchFrame.add(root.checkCli)
+
 
     #create run button
-    run_btn = Button(searchFrame, text="Run", command=run,anchor=S)
-    searchFrame.add(run_btn,pady=30)
+    separater = Frame(searchFrame,height = 10)
+    searchFrame.add(separater)
+
+    run_btn = Button(searchFrame, text="Run", command=run)
+    searchFrame.add(run_btn)
+
+    separater = Frame(searchFrame,width = 8)
+    searchFrame.add(separater)
+
+def UseCli():
+    return root.varCli.get()==1
+
 
 imageExtensions = ["png", "jpg", "gif", "dds",
                    "tga", "tiff", "tco", "bmp"]
@@ -289,6 +330,7 @@ def init(searchDir="",destDir="",currentDir=""):
         root.destDir = config["DEFAULT"]["destDir"]
     else:
         config.read(currentDir+'config.ini')
+        root.varCli = IntVar(value=(1 if ValidCliExe else 0))
 
 
     root.imgnutexbLocation = config["DEFAULT"]["img2nutexbLocation"]
@@ -298,6 +340,12 @@ def init(searchDir="",destDir="",currentDir=""):
         with open('config.ini', 'w+') as configfile:
             config.write(configfile)
     root.maxThreads = int(config["DEFAULT"]["maxThreads"])
+    if not "nutexbcliLocation" in config["DEFAULT"]:
+        config["DEFAULT"]["nutexbcliLocation"]=defaultCliLocation
+        with open('config.ini', 'w+') as configfile:
+            config.write(configfile)
+    root.nutexbcliLocation = config["DEFAULT"]["nutexbcliLocation"]
+    print("nutexb_cli: "+root.nutexbcliLocation)
 
     progressroot.withdraw()
     progressroot.minsize(250,100)
@@ -407,7 +455,10 @@ def BatchImg(textures):
         subcallName.append(internalName)
         subcallTarget.append(targetFile)
         subcallNewFile.append(newNutexb)
-        
+
+    if (UseCli()):
+        useDDSPrompt=False
+        useDDSOption=False
     if (useDDSPrompt):
         useDDSPrompt = False
         useDDSOption = messagebox.askyesno(root.title(), "Use img2nutexb DDS options for DDS Files? (Some failed dds conversions can be fixed by not using these options)",icon ='info')
@@ -434,11 +485,15 @@ def BatchImg(textures):
         shutil.copy(root.blankFile,newNutexb)
 
         
-        #run program on it depending on if the text file ends in dds
-        subcall = [root.imgnutexbLocation,"-n "+internalName,targetFile,newNutexb]
-        if len(subcallExtra)>0:
-            for e in subcallExtra:
-                subcall.append(e)
+        if (UseCli()):
+            subcall = [root.nutexbcliLocation,targetFile,newNutexb]
+        else:
+            #run program on it depending on if the text file ends in dds
+            subcall = [root.imgnutexbLocation,"-n "+internalName,targetFile,newNutexb]
+            if len(subcallExtra)>0:
+                for e in subcallExtra:
+                    subcall.append(e)
+
         progressroot.queue.put(subcall)
 
     imgThread = threading.Thread(target=StartThreads, args=())
@@ -530,14 +585,21 @@ import time
 def BatchImgSubCall():
     while True:
         subcall = progressroot.queue.get()
-        print("Converting "+os.path.basename(subcall[2]))
+        sourceFilePath = subcall[1] 
+        targetFilePath = subcall[2]
+        convertedDDS = " using nutexb_cli.exe"
+        if (not UseCli()):
+            sourceFilePath = subcall[2] 
+            targetFilePath = subcall[3]
+            convertedDDS = " using dds options" if len(subcall)>4 else ""
+
+        print("Converting "+os.path.basename(sourceFilePath))
         try:
             process_output = subprocess.run(subcall)#, stdout=stdout_file, stderr=stdout_file, text=True)
         except:
             print(os.path.basename(newNutexb) + " can't be converted; might be open in another program")
 
-        convertedDDS = " using dds options" if len(subcall)>4 else ""
-        print("Created "+os.path.basename(subcall[3]) + convertedDDS)
+        print("Created "+os.path.basename(targetFilePath) + convertedDDS)
         progressroot.queue.task_done()
         
 

@@ -3,6 +3,15 @@ img2nutexb.exe
 *.ps1
 *.ini
 
+#SharpSuite
+template.numatb.bk
+template.numatb
+template - Copy.numatb
+test.py
+model_old.numdlb
+output.txt
+textureList.txt
+
 #NumatbGUI
 NumatbGUI/New folder/
 NumatbGUI/New folder (2)/
@@ -24,8 +33,28 @@ LazyNumdlb/model_old.numdlb
 
 #LazyMat
 LazyMat/presets.xml
+LazyMat/matlablocation.txt
 
+#Magic Model
+MagicModel/model_old.numdlb
 
+#NumatbGUI
+NumatbGUI/output.txt
+
+#img2nutexbGUI
+img2nutexbGUI/output.txt
+img2nutexbGUI/textureList.txt
+img2nutexbGUI/nutexb_cli/.fingerprint
+img2nutexbGUI/nutexb_cli/build
+img2nutexbGUI/nutexb_cli/deps
+img2nutexbGUI/nutexb_cli/examples
+img2nutexbGUI/nutexb_cli/incremental
+img2nutexbGUI/nutexb_cli/.cargo-lock
+img2nutexbGUI/nutexb_cli/libnutexb.d
+img2nutexbGUI/nutexb_cli/libnutexb.rlib
+img2nutexbGUI/nutexb_cli/nutexb_cli.d
+img2nutexbGUI/nutexb_cli/nutexb_cli.exe
+img2nutexbGUI/nutexb_cli/nutexb_cli.pdb
 
 
 # Byte-compiled / optimized / DLL files
@@ -159,28 +188,3 @@ dmypy.json
 .pyre/
 
 *.db
-
-
-template.numatb.bk
-
-MagicModel/model_old.numdlb
-
-LazyMat/matlablocation.txt
-
-img2nutexbGUI/output.txt
-
-img2nutexbGUI/textureList.txt
-
-NumatbGUI/output.txt
-
-output.txt
-
-textureList.txt
-
-template - Copy.numatb
-
-template.numatb
-test.py
-model_old.numdlb
-model_old.numdlb
-model_old.numdlb
