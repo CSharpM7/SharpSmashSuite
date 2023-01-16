@@ -196,11 +196,11 @@ def BatchImg():
     for i in root.materials:
         textures.append(root.materials[i])
 
-    from img2nutexbGUI import batchimg
+    from img2nutexbGUI import img2nutexbGUI
     sys.path.insert(0, '/img2nutexbGUI/')
-    batchimg.init(root.searchDir,root.destinationDir,os.getcwd() + r"/img2nutexbGUI/")
-    batchimg.ValidatePorgram()
-    batchimg.BatchImg(textures)
+    img2nutexbGUI.init(root.searchDir,root.destinationDir,os.getcwd() + r"/img2nutexbGUI/")
+    img2nutexbGUI.ValidatePorgram()
+    img2nutexbGUI.BatchImg(textures)
 
 def Main():
     Init()
