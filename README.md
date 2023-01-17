@@ -22,6 +22,8 @@ Microsoft Excel - Only for Lazymat, but highly recommended for creating multiple
 
 ### Optional but recommended
 
+[ArcExplorer](https://github.com/ScanMountGoat/ArcExplorer) - Obtaining assets
+
 [nutexb_cli.exe](https://github.com/jam1garner/nutexb) - Program required for using img2nutexbGU with DDS files
 
 [rustup](https://www.rust-lang.org/tools/install) used for building nutexb_cli
