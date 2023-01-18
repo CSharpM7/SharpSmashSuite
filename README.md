@@ -24,10 +24,11 @@ Microsoft Excel - Only for Lazymat, but highly recommended for creating multiple
 
 [ArcExplorer](https://github.com/ScanMountGoat/ArcExplorer) - Obtaining assets
 
+[ssbh_data_json](https://github.com/ultimate-research/ssbh_lib/releases) - Converting files to json to edit
+
 [nutexb_cli.exe](https://github.com/jam1garner/nutexb) - Program required for using img2nutexbGU with DDS files
 
 [rustup](https://www.rust-lang.org/tools/install) used for building nutexb_cli
-
 
 
 ## Installation
