@@ -32,7 +32,7 @@ Microsoft Excel - Only for Lazymat, but highly recommended for creating multiple
 
 ## Tutorial
 
-https://www.youtube.com/watch?v=M386e36XFmg
+[![Youtube Tutorial](https://img.youtube.com/vi/M386e36XFmg/0.jpg)](https://www.youtube.com/watch?v=M386e36XFmg)
 
 ## Installation
 
