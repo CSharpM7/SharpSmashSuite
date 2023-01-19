@@ -26,7 +26,7 @@ Microsoft Excel - Only for Lazymat, but highly recommended for creating multiple
 
 [ssbh_data_json](https://github.com/ultimate-research/ssbh_lib/releases) - Converting files to json to edit
 
-[nutexb_cli.exe](https://github.com/jam1garner/nutexb) - Program required for using img2nutexbGU with DDS files
+[nutexb_cli.exe](https://github.com/jam1garner/nutexb) - Program required for using img2nutexbGU with DDS files. Run cargo build on the root of the repo, navigate to target/debug, and there will be the nutexb_cli.exe you'll need. If you want to move this program elsewhere, move the entire debug folder.
 
 [rustup](https://www.rust-lang.org/tools/install) used for building nutexb_cli
 
