@@ -30,6 +30,9 @@ Microsoft Excel - Only for Lazymat, but highly recommended for creating multiple
 
 [rustup](https://www.rust-lang.org/tools/install) used for building nutexb_cli
 
+## Tutorial
+
+https://www.youtube.com/watch?v=M386e36XFmg
 
 ## Installation
 
