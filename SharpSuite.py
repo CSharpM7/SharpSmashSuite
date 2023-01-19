@@ -20,6 +20,17 @@ import imghdr
 
 from queue import Queue
 
+#create ui for program
+root = Tk()
+root.title("Sharp Smash Suite")
+root.withdraw()
+
+root.destinationDir = ""
+root.searchDir = ""
+
+root.hasModel=False
+root.hasMesh=False
+
 import configparser
 config = configparser.ConfigParser()
 if (not os.path.isfile(os.getcwd() + r"/img2nutexbGUI/config.ini")):
@@ -44,16 +55,6 @@ def truncate(string,direciton=W,limit=20,ellipsis=True):
         text = string[0:limit]+addEllipsis
     return text
 
-#create ui for program
-root = Tk()
-root.title("Sharp Smash Suite")
-root.withdraw()
-
-root.destinationDir = ""
-root.searchDir = ""
-
-root.hasModel=False
-root.hasMesh=False
 
 imgnutexbLocation = os.getcwd() + "/img2nutexbGUI/img2nutexb.exe"
 

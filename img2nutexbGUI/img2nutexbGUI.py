@@ -37,7 +37,7 @@ defaultConfig['DEFAULT'] = {
     'nutexbcliLocation': defaultCliLocation,
     'searchDir' : "",
     'destDir' : "",
-    'root.maxThreads': "4"
+    'maxThreads': "4"
     }
 
 
@@ -102,20 +102,23 @@ def ValidatePorgram():
             message(type = "ERROR",text = "Selected file not valid")
             root.destroy()
             sys.exit("No img2nutexb.exe file")
+
     #if we don't have nutexbCli here, then ask for it!
     if (ValidCliExe() == False):
-        message(type = "Warning",text = "nutexb_cli.exe not found, please select it (this can be skipped)")
-        ftypes = [    
-            ('nutexb_cli program', ["*.exe"])
-        ]
-        file = filedialog.askopenfile(title = "Search",filetypes = ftypes)
-        root.nutexbcliLocation = file.name if file else ""
-        #if selected file is in valid, quit
-        if (not ValidCliExe()):
-            config.set("DEFAULT","nutexbcliLocation",defaultLocation)
-            #message(type = "ERROR",text = "Selected file not valid")
-            #root.destroy()
-            #sys.exit("No nutexb_cli.exe file")
+        root.nutexbcliLocation = root.imgnutexbLocation.replace("img2nutexb.exe","nutexb_cli/nutexb_cli.exe")
+        if not ValidCliExe():
+            message(type = "Warning",text = "nutexb_cli.exe not found, please select it (this can be skipped)")
+            ftypes = [    
+                ('nutexb_cli program', ["*.exe"])
+            ]
+            file = filedialog.askopenfile(title = "Search",filetypes = ftypes)
+            root.nutexbcliLocation = file.name if file else ""
+            #if selected file is in valid, quit
+            if (not ValidCliExe()):
+                config.set("DEFAULT","nutexbcliLocation",defaultLocation)
+                #message(type = "ERROR",text = "Selected file not valid")
+                #root.destroy()
+                #sys.exit("No nutexb_cli.exe file")
 
         #write new location to config
         config.set("DEFAULT","img2nutexbLocation",root.imgnutexbLocation)
@@ -242,7 +245,7 @@ def startGUI():
 
     #create cli combo
     root.varCli = IntVar(value=(1 if ValidCliExe else 0))
-    if (ValidCliExe):
+    if (ValidCliExe()):
         root.checkCli = Checkbutton(searchFrame, text='Use nutexb_cli.exe',variable=root.varCli, onvalue=1, offvalue=0)
         searchFrame.add(root.checkCli)
 
@@ -335,8 +338,8 @@ def init(searchDir="",destDir="",currentDir=""):
 
     root.imgnutexbLocation = config["DEFAULT"]["img2nutexbLocation"]
     print("imgnutexbLocation: "+root.imgnutexbLocation)
-    if not "root.maxThreads" in config["DEFAULT"]:
-        config["DEFAULT"]["root.maxThreads"]="4"
+    if not "maxThreads" in config["DEFAULT"]:
+        config["DEFAULT"]["maxThreads"]="4"
         with open('config.ini', 'w+') as configfile:
             config.write(configfile)
     root.maxThreads = int(config["DEFAULT"]["maxThreads"])
@@ -456,6 +459,7 @@ def BatchImg(textures):
         subcallTarget.append(targetFile)
         subcallNewFile.append(newNutexb)
 
+    progressroot.UseCli = UseCli()
     if (UseCli()):
         useDDSPrompt=False
         useDDSOption=False
@@ -467,9 +471,6 @@ def BatchImg(textures):
         subcallExtra.append("-u")
 
     root.withdraw()
-        
-
-
     progressroot.deiconify()
 
     progressroot.queue = Queue(maxsize=0)
@@ -588,7 +589,7 @@ def BatchImgSubCall():
         sourceFilePath = subcall[1] 
         targetFilePath = subcall[2]
         convertedDDS = " using nutexb_cli.exe"
-        if (not UseCli()):
+        if (not progressroot.UseCli):
             sourceFilePath = subcall[2] 
             targetFilePath = subcall[3]
             convertedDDS = " using dds options" if len(subcall)>4 else ""
