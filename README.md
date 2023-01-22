@@ -6,7 +6,7 @@
 
 Tested on Windows, but should work on most OSs that can run Python 3.9+
 
-Python 3.9+ - Used everywhere in this suite
+Python 3.9 - Used everywhere in this suite
 
 [img2nutexb](https://github.com/jam1garner/img2nutexb) - Program required for using img2nutexbGUI
 
