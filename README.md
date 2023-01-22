@@ -10,7 +10,7 @@ Python 3.9+ - Used everywhere in this suite
 
 [img2nutexb](https://github.com/jam1garner/img2nutexb) - Program required for using img2nutexbGUI
 
-[ssbh\_data\_py](https://github.com/ScanMountGoat/ssbh_data_py) - Running MagicModel. You'll need to use the `pip install` command for this, so you might also have to install python pip
+[ssbh\_data\_py](https://github.com/ScanMountGoat/ssbh_data_py) - Running MagicModel. You'll need to use the `python -m pip install ssbh_data_py` command in command prompt to install 
 
 [MatLab] (https://github.com/Ploaj/SSBHLib)  - (Not the math software) Running LazyMat
 
