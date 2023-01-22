@@ -514,7 +514,7 @@ def BatchImg(textures):
     progressroot.progressLabel = Label(progressroot, text=UpdateProgressLabel(progressroot.progressBar['value']))
     progressroot.progressLabel.grid(column=0, row=1, columnspan=2)
     progressroot.deiconify()
-    progressroot.protocol("WM_DELETE_WINDOW", quit)
+    progressroot.protocol("WM_DELETE_WINDOW", onClosed)
 
     start = time.time()
 

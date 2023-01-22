@@ -169,7 +169,12 @@ def Numatb_Copy(matEntryData):
     return clone
 
 def Numatb_CreateMatl():
-    root.matl = ssbh_data_py.matl_data.read_matl(os.getcwd() + "/template.numatb")
+    template = os.getcwd() + "/template.numatb"
+    if not os.path.exists(template):
+        messagebox.showerror(root.title(),"template.numatb is missing from this directory!")
+        print("Numatb failed")
+        return
+    root.matl = ssbh_data_py.matl_data.read_matl(template)
 
     i=0
     currentEntry = root.matl.entries[0]
@@ -213,6 +218,7 @@ def Main():
     MagicModel()
     #messagebox.showinfo(root.title(),"Finished!")
     #webbrowser.open(root.destinationDir)
+    sys.exit("Finished")
 
 if __name__ == '__main__':
     Main()
