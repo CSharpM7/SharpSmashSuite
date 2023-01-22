@@ -86,9 +86,12 @@ def SetDestinationDir():
         root.destroy()
         sys.exit("rejected folder")
     if (IsValidDestination() == False):
-        messagebox.showerror(root.title(),"That folder doesn't contain a model and mesh file, as also needs a materials.txt generated from Blender")
+        if not (root.hasModel and root.hasMesh):
+            messagebox.showerror(root.title(),"That folder doesn't contain both a model (.numdlb) and mesh (.numshb) file!")
+        if not (root.hasMaterials):
+            messagebox.showerror(root.title(),"That folder doesn't contain a materials.txt file! You'll need to run 'Export Materials List' from Blender and set the destination here.")
         root.destroy()
-        sys.exit("No model")
+        sys.exit("No model/mesh/materials")
 
 #make sure that it is a validated destination folder, otherwise quit
 def IsValidSearch():
