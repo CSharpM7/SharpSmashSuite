@@ -282,7 +282,7 @@ def AddEntry(m):
         if (".xml" in filename or ".json" in filename):
             continue
         #Only include model folders if using file addition
-        if ("model" in filename and not newDir):
+        if ("model" in filename and not newDir and not ".nuanmb" in filename):
             continue
 
         fileToAdd = trimmedName + r"/" + file
