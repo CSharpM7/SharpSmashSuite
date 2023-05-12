@@ -102,6 +102,8 @@ def InitJSON():
     root.data = {}
     root.data["new-dir-infos"] = []
     root.data["new-dir-infos-base"] = []
+    root.data["unshare-blacklist"] = []
+    root.data["share-to-added"] = {}
     root.data["new-dir-files"] = {}
     root.addFiles = root.data["new-dir-files"]
     root.addFolders = root.data["new-dir-infos"]
@@ -253,7 +255,8 @@ def AddEntry(m):
         entryName = "fighter/" + fighterName + fighterSlot 
         if (root.currentSlot == ""):
             root.currentSlot = fighterSlot
-            root.canClone = True
+            if "/model/" in entryName:
+                root.canClone = True
         elif (root.currentSlot != fighterSlot):
             root.canClone = False
 
@@ -279,11 +282,14 @@ def AddEntry(m):
     for file in os.listdir(m):
         filename = os.path.basename(file)
         #Don't include leftover xml and jsons
-        if (".xml" in filename or ".json" in filename):
+        if (".xml" in filename or ".json" in filename or ".yml" in filename):
             continue
         #Only include model folders if using file addition
         if ("model" in filename and not newDir and not ".nuanmb" in filename):
             continue
+        if ("motion" in filename):
+            root.hasAnims = True
+            #continue
 
         fileToAdd = trimmedName + r"/" + file
         if (not fileToAdd in root.addFiles[entryName]):
@@ -302,6 +308,7 @@ def ScanFolders():
 
     root.currentSlot = ""
     root.canClone = False
+    root.hasAnims = False
 
     print(root.modType)
     #for each model folder, gather the folders
@@ -333,16 +340,34 @@ def CloneSlots():
                     continue
                 currentKey = list(originalFiles)[0]
                 newKey = currentKey.replace(root.currentSlot,"/c0"+str(i))
-                print(newKey)
+                print("current key:" + currentKey + " new key:"+newKey)
                 root.addFiles[newKey] = []
                 for value in originalFiles.get(currentKey):
                     newValue = value.replace(root.currentSlot,"/c0"+str(i))
                     root.addFiles[newKey].append(newValue)
                     print(newValue)
 
+def ShareAnims():
+    if (root.hasAnims):
+        unshare = messagebox.askquestion(root.title(), 'Use unshare-blacklist for animations?')
+        originalFiles = root.addFiles.copy()
+        currentKey = list(originalFiles)[0]
+        for value in originalFiles.get(currentKey):
+            if "/motion" in value:
+                if unshare == 'yes':
+                    root.data["unshare-blacklist"].append(value)
+                else:
+                    root.data["share-to-added"][value] = []
+                    currentSlotAsInt = int(root.currentSlot[3:4])
+                    for i in range(8):
+                        if (i == currentSlotAsInt):
+                            continue
+                        newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
+                        root.data["share-to-added"][value].append(newValue)
+
 def FinishJSON():
     #Remove any files that are in vanilla if cloning wasn't used
-    if (root.clonedSlots == False):
+    if (root.clonedSlots == False) or True:
         cloneDict = root.addFiles.copy()
         for model in cloneDict:
             cloneModel = root.addFiles[model].copy()
@@ -363,6 +388,16 @@ def FinishJSON():
         webbrowser.open("https://github.com/CSharpM7/reslotter")
     elif (root.modType == "stage"):
         del root.data["new-dir-infos-base"]
+
+    if len(root.data["unshare-blacklist"]) == 0:
+        del root.data["unshare-blacklist"]
+
+    if len(root.data["share-to-added"]) == 0:
+        del root.data["share-to-added"]
+
+    if len(root.data["new-dir-files"]) == 0:
+        del root.data["new-dir-files"]
+
 
     #create configJson file
     writeLocation = root.searchDir + '/config.json'
@@ -386,6 +421,7 @@ def Main():
     CreateVanillaDict()
     ScanFolders()
     CloneSlots()
+    ShareAnims()
     FinishJSON()
 
 Main()
