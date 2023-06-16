@@ -249,10 +249,11 @@ def AddEntry(m):
 
     #fighters have different entryNames
     if (root.modType == "fighter"):
-        fighterNameR = trimmedName.find("/model")
-        fighterName = (trimmedName[0:fighterNameR]).replace("fighter/","")
+        print(trimmedName.replace("fighter/",""))
+        fighterNameR = trimmedName.replace("fighter/","").find("/")
+        fighterName = trimmedName.replace("fighter/","")[0:fighterNameR]
         fighterSlot = trimmedName[len(trimmedName)-4:len(trimmedName)]
-        entryName = "fighter/" + fighterName + fighterSlot 
+        entryName = "fighter/" + fighterName + fighterSlot
         if (root.currentSlot == ""):
             root.currentSlot = fighterSlot
             if "/model/" in entryName:
@@ -285,9 +286,10 @@ def AddEntry(m):
         if (".xml" in filename or ".json" in filename or ".yml" in filename):
             continue
         #Only include model folders if using file addition
-        if ("model" in filename and not newDir and not ".nuanmb" in filename):
+        if ("model" in trimmedName and not newDir and not ".nuanmb" in filename):
             continue
-        if ("motion" in filename):
+        if ("motion" in trimmedName):
+            print("Has motion")
             root.hasAnims = True
             #continue
 
@@ -349,7 +351,7 @@ def CloneSlots():
 
 def ShareAnims():
     if (root.hasAnims):
-        unshare = messagebox.askquestion(root.title(), 'Use unshare-blacklist for animations?')
+        unshare = not messagebox.askquestion(root.title(), 'Use share-to-added for animations? (Otherwise use unshare-blacklist)')
         originalFiles = root.addFiles.copy()
         currentKey = list(originalFiles)[0]
         for value in originalFiles.get(currentKey):
