@@ -256,8 +256,7 @@ def AddEntry(m):
         entryName = "fighter/" + fighterName + fighterSlot
         if (root.currentSlot == ""):
             root.currentSlot = fighterSlot
-            if "/model/" in entryName:
-                root.canClone = True
+            root.canClone = True
         elif (root.currentSlot != fighterSlot):
             root.canClone = False
 
@@ -289,7 +288,6 @@ def AddEntry(m):
         if ("model" in trimmedName and not newDir and not ".nuanmb" in filename):
             continue
         if ("motion" in trimmedName):
-            print("Has motion")
             root.hasAnims = True
             #continue
 
@@ -345,7 +343,7 @@ def CloneSlots():
                 print("current key:" + currentKey + " new key:"+newKey)
                 root.addFiles[newKey] = []
                 for value in originalFiles.get(currentKey):
-                    newValue = value.replace(root.currentSlot,"/c0"+str(i))
+                    newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
                     root.addFiles[newKey].append(newValue)
                     print(newValue)
 
@@ -369,17 +367,17 @@ def ShareAnims():
 
 def FinishJSON():
     #Remove any files that are in vanilla if cloning wasn't used
-    if (root.clonedSlots == False) or True:
-        cloneDict = root.addFiles.copy()
-        for model in cloneDict:
-            cloneModel = root.addFiles[model].copy()
-            for file in cloneModel:
-                if (FileInVanilla(file)):
-                    root.addFiles[model].remove(file)
-                else:
-                    print("adding:"+file)
-            if (len(root.addFiles[model])==0):
-                del root.addFiles[model]
+    #if (root.clonedSlots == False) or True:
+    cloneDict = root.addFiles.copy()
+    for model in cloneDict:
+        cloneModel = root.addFiles[model].copy()
+        for file in cloneModel:
+            if (FileInVanilla(file)):
+                root.addFiles[model].remove(file)
+            else:
+                print("adding:"+file)
+        if (len(root.addFiles[model])==0):
+            del root.addFiles[model]
 
     #remove folderAddition if not used
     if (not root.folderAddition):
