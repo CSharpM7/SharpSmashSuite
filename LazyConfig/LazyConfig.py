@@ -281,7 +281,7 @@ def AddEntry(m):
     for file in os.listdir(m):
         filename = os.path.basename(file)
         #Don't include leftover xml and jsons
-        if (".xml" in filename or ".json" in filename or ".yml" in filename):
+        if (".xml" in filename or ".json" in filename or ".yml" in filename or ".motdiff" in filename):
             continue
         #Only include model folders if using file addition
         #if ("model" in trimmedName and not newDir and not ".nuanmb" in filename):
@@ -327,7 +327,7 @@ def ScanFolders():
 def CloneSlots():
     root.clonedSlots = False
     if (root.canClone):
-        res = messagebox.askquestion(root.title(), 'Make copies of '+root.currentSlot+' config root.data across c00-c07?')
+        res = messagebox.askquestion(root.title(), "Make copies of "+root.currentSlot+"'s config data across c00-c07?")
         if res == 'yes':
             root.clonedSlots = True
             currentSlotAsInt = int(root.currentSlot[3:4])
@@ -355,13 +355,15 @@ def ShareAnims():
                 if unshare == 'yes':
                     root.data["unshare-blacklist"].append(value)
                 else:
-                    root.data["share-to-added"][value] = []
-                    currentSlotAsInt = int(root.currentSlot[3:4])
-                    for i in range(8):
-                        if (i == currentSlotAsInt):
-                            continue
-                        newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
-                        root.data["share-to-added"][value].append(newValue)
+                    #Don't use share-to-add on new files
+                    if (FileInVanilla(value)):
+                        root.data["share-to-added"][value] = []
+                        currentSlotAsInt = int(root.currentSlot[3:4])
+                        for i in range(8):
+                            if (i == currentSlotAsInt):
+                                continue
+                            newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
+                            root.data["share-to-added"][value].append(newValue)
 
 def FinishJSON():
     #Remove any files that are in vanilla if cloning wasn't used
