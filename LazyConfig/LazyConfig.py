@@ -115,7 +115,7 @@ def Init():
 def UseFolderAddition(folderkey):
     root.folderAddition=True
     if (not folderkey in root.addFolders):
-        print("(NEW)"+folderkey)
+        print("(NEW DIR)"+folderkey)
         root.addFolders.append(folderkey)
     #if (root.modType == "fighter"):
     #    messagebox.showwarning(root.title(),"Folder addition was used for "+entryName+"; LazyConfig does not support Additional Slots. Please use ReslotterGUI instead.")
@@ -277,7 +277,6 @@ def AddEntry(m):
         UseFolderAddition(entryName)
         newDir=True
 
-
     #comb through each file
     for file in os.listdir(m):
         filename = os.path.basename(file)
@@ -285,8 +284,8 @@ def AddEntry(m):
         if (".xml" in filename or ".json" in filename or ".yml" in filename):
             continue
         #Only include model folders if using file addition
-        if ("model" in trimmedName and not newDir and not ".nuanmb" in filename):
-            continue
+        #if ("model" in trimmedName and not newDir and not ".nuanmb" in filename):
+        #    continue
         if ("motion" in trimmedName):
             root.hasAnims = True
             #continue
@@ -310,7 +309,6 @@ def ScanFolders():
     root.canClone = False
     root.hasAnims = False
 
-    print(root.modType)
     #for each model folder, gather the folders
     for folder in modelFolders:
         models = [f.path for f in os.scandir(folder) if f.is_dir()]
@@ -367,17 +365,17 @@ def ShareAnims():
 
 def FinishJSON():
     #Remove any files that are in vanilla if cloning wasn't used
-    #if (root.clonedSlots == False) or True:
-    cloneDict = root.addFiles.copy()
-    for model in cloneDict:
-        cloneModel = root.addFiles[model].copy()
-        for file in cloneModel:
-            if (FileInVanilla(file)):
-                root.addFiles[model].remove(file)
-            else:
-                print("adding:"+file)
-        if (len(root.addFiles[model])==0):
-            del root.addFiles[model]
+    if (root.clonedSlots == False) or True:
+        cloneDict = root.addFiles.copy()
+        for model in cloneDict:
+            cloneModel = root.addFiles[model].copy()
+            for file in cloneModel:
+                if (FileInVanilla(file)):
+                    root.addFiles[model].remove(file)
+                else:
+                    print(file)
+            if (len(root.addFiles[model])==0):
+                del root.addFiles[model]
 
     #remove folderAddition if not used
     if (not root.folderAddition):
