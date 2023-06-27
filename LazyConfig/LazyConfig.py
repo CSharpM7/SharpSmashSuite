@@ -286,7 +286,7 @@ def AddEntry(m):
         #Only include model folders if using file addition
         #if ("model" in trimmedName and not newDir and not ".nuanmb" in filename):
         #    continue
-        if ("motion" in trimmedName):
+        if ("motion" in trimmedName and root.modType == "fighter"):
             root.hasAnims = True
             #continue
 
