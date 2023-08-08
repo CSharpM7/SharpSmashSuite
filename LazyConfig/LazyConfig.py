@@ -360,24 +360,24 @@ def CloneSlots():
                 for i in range(8):
                     if (i == currentSlotAsInt):
                         continue
-                        newKey = currentKey.replace(root.currentSlot,"/c0"+str(i))
-                        root.addFiles[newKey] = []
-                        for value in originalFiles.get(currentKey):
-                            newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
-                            root.addFiles[newKey].append(newValue)
-                            print(newValue)
+                    newKey = currentKey.replace(root.currentSlot,"/c0"+str(i))
+                    root.addFiles[newKey] = []
+                    for value in originalFiles.get(currentKey):
+                        newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
+                        root.addFiles[newKey].append(newValue)
 
 def ShareAnims():
     if (root.hasAnims):
-        unshare = not messagebox.askquestion(root.title(), 'Use share-to-added for animations? (Otherwise use unshare-blacklist)')
+        shareAdded = messagebox.askquestion(root.title(), 'Use share-to-added for animations? (Otherwise use unshare-blacklist)')
         originalFiles = root.addFiles.copy()
         for currentKey in list(originalFiles):
             if "effect" in currentKey:
                 continue
             for value in originalFiles.get(currentKey):
                 if "/motion" in value or "sound/bank/fighter" in value:
-                    if unshare == 'yes':
-                        root.data["unshare-blacklist"].append(value)
+                    if shareAdded == 'no':
+                        if (FileInVanilla(value)):
+                            root.data["unshare-blacklist"].append(value)
                     else:
                         #Don't use share-to-add on new files
                         if (FileInVanilla(value)):
@@ -447,8 +447,8 @@ def Main():
     Init()
     CreateVanillaDict()
     ScanFolders()
-    CloneSlots()
     ShareAnims()
+    CloneSlots()
     FinishJSON()
 
 Main()
