@@ -138,16 +138,23 @@ def scanSubFolders(dir,modelFolders):
         subfolders.extend(scanSubFolders(dirname,modelFolders))
         #for fighters, check every body/alt folder
         if (root.modType == "fighter"):
-            if (folderName == "model" or folderName == "motion"):
+            if (folderName == "model" or folderName == "motion" or folderName == "sound"):
                 fighterFolders = [m.path for m in os.scandir(dir) if m.is_dir()]
                 for fname in list(fighterFolders):
                     modelFolders.append(fname)
+            elif (folderName == "effect"):
+                effectFolders = [e.path for e in os.scandir(dir) if e.is_dir()]
+                for ename in list(effectFolders):
+                    #modelFolders.append(ename)
+                    trailFolders = [t.path for t in os.scandir(ename) if t.is_dir()]
+                    for tname in list(trailFolders):
+                        modelFolders.append(tname)
     return subfolders,modelFolders
 
 #start of recursion, this will only begin recursive search if the directory name is a whitelist,
 #or a subfolder in the directory is in the whitelist
 def scanSubFoldersStart(dir,modelFolders):
-    whitelist = ["fighter","stage","effect"]
+    whitelist = ["fighter","stage","effect","sound"]
 
     #check if current folder is in whitelist
     folderName = os.path.basename(dir)
@@ -172,6 +179,8 @@ def trimName(file):
     if ("effect" in file):
         if (not "battle" in file) and (not "normal" in file):
             prefix = (file.find("effect"))
+    elif ("sound" in file):
+        prefix = (file.find("sound"))
     trimmedName = file[prefix:]
     trimmedName = trimmedName.replace("\\","/")
     return trimmedName
@@ -197,7 +206,6 @@ def CreateVanillaDict():
             mods.append(trimmedName)
         mods.append("effect")
         mods.append("effect/stage")
-
 
     #Relevant files are the vanilla files that pertain to these stages/fighters
     filesystemFile = open(root.txtFile,'r')
@@ -234,6 +242,8 @@ def FolderInVanilla(entryName):
             toReturn=True
     return toReturn
 def FileInVanilla(entryName):
+    if "sound/bank/fighter" in entryName:
+        return True
     toReturn = False
     for d in root.vanillaFiles:
         if (entryName in d):
@@ -245,10 +255,17 @@ def AddEntry(m):
     #for each model, trim down its name and add trimmed name to json
     trimmedName = trimName(m)
     entryName = trimmedName
+
+    if ("effect/fighter/" in entryName):
+        key = "effect/fighter/"
+        fighterName = entryName[len(key):]
+        if "/" in fighterName:
+            fighterName = fighterName[:fighterName.find("/")]
+        entryName = "fighter/"+fighterName+"/cmn/effect"
     fighterSlot = 0
 
     #fighters have different entryNames
-    if (root.modType == "fighter"):
+    if (root.modType == "fighter" and root.searchDir+"\\fighter" in m):
         print(trimmedName.replace("fighter/",""))
         fighterNameR = trimmedName.replace("fighter/","").find("/")
         fighterName = trimmedName.replace("fighter/","")[0:fighterNameR]
@@ -267,7 +284,7 @@ def AddEntry(m):
     #determine whether to use dirAddtion
     newDir = False
     #For Fighters, if the slot is greater than 7, then use dirAddition
-    if (root.modType == "fighter"):
+    if (root.modType == "fighter" and root.searchDir+"\\fighter" in m):
         fighterSlotAsInt = int(fighterSlot[3:4]) 
         if (fighterSlotAsInt>=8):
             UseFolderAddition(entryName)
@@ -281,12 +298,16 @@ def AddEntry(m):
     for file in os.listdir(m):
         filename = os.path.basename(file)
         #Don't include leftover xml and jsons
+        if (os.path.isdir(m+"\\"+file)):
+            continue
         if (".xml" in filename or ".json" in filename or ".yml" in filename or ".motdiff" in filename):
             continue
         #Only include model folders if using file addition
         #if ("model" in trimmedName and not newDir and not ".nuanmb" in filename):
         #    continue
         if ("motion" in trimmedName and root.modType == "fighter"):
+            root.hasAnims = True
+        if ("sound/bank/fighter" in trimmedName and root.modType == "fighter"):
             root.hasAnims = True
             #continue
 
@@ -333,37 +354,43 @@ def CloneSlots():
             currentSlotAsInt = int(root.currentSlot[3:4])
             originalFiles = root.addFiles.copy()
             #clone
-            for i in range(8):
-                if (i == currentSlotAsInt):
+            for currentKey in list(originalFiles):
+                if "effect" in currentKey:
                     continue
-                currentKey = list(originalFiles)[0]
-                newKey = currentKey.replace(root.currentSlot,"/c0"+str(i))
-                print("current key:" + currentKey + " new key:"+newKey)
-                root.addFiles[newKey] = []
-                for value in originalFiles.get(currentKey):
-                    newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
-                    root.addFiles[newKey].append(newValue)
-                    print(newValue)
+                for i in range(8):
+                    if (i == currentSlotAsInt):
+                        continue
+                        newKey = currentKey.replace(root.currentSlot,"/c0"+str(i))
+                        root.addFiles[newKey] = []
+                        for value in originalFiles.get(currentKey):
+                            newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
+                            root.addFiles[newKey].append(newValue)
+                            print(newValue)
 
 def ShareAnims():
     if (root.hasAnims):
         unshare = not messagebox.askquestion(root.title(), 'Use share-to-added for animations? (Otherwise use unshare-blacklist)')
         originalFiles = root.addFiles.copy()
-        currentKey = list(originalFiles)[0]
-        for value in originalFiles.get(currentKey):
-            if "/motion" in value:
-                if unshare == 'yes':
-                    root.data["unshare-blacklist"].append(value)
-                else:
-                    #Don't use share-to-add on new files
-                    if (FileInVanilla(value)):
-                        root.data["share-to-added"][value] = []
-                        currentSlotAsInt = int(root.currentSlot[3:4])
-                        for i in range(8):
-                            if (i == currentSlotAsInt):
-                                continue
-                            newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
-                            root.data["share-to-added"][value].append(newValue)
+        for currentKey in list(originalFiles):
+            if "effect" in currentKey:
+                continue
+            for value in originalFiles.get(currentKey):
+                if "/motion" in value or "sound/bank/fighter" in value:
+                    if unshare == 'yes':
+                        root.data["unshare-blacklist"].append(value)
+                    else:
+                        #Don't use share-to-add on new files
+                        if (FileInVanilla(value)):
+                            root.data["share-to-added"][value] = []
+                            currentSlotAsInt = int(root.currentSlot[2:4])
+                            for i in range(8):
+                                if (i == currentSlotAsInt):
+                                    continue
+                                if "sound/bank/fighter" in value:
+                                    newValue = value.replace("_"+root.currentSlot.replace("/",""),"_c0"+str(i))
+                                else:
+                                    newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
+                                root.data["share-to-added"][value].append(newValue)
 
 def FinishJSON():
     #Remove any files that are in vanilla if cloning wasn't used
