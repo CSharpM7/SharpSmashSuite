@@ -30,6 +30,8 @@ root = Tk()
 root.title("Lazy Config")
 root.withdraw()
 
+exclude = ["xml","json","yml","yaml","motdiff","txt"]
+
 #open folder dialogue
 def setsearchDir():
     messagebox.showinfo(root.title(),"Select your mod's main folder")
@@ -300,7 +302,8 @@ def AddEntry(m):
         #Don't include leftover xml and jsons
         if (os.path.isdir(m+"\\"+file)):
             continue
-        if (".xml" in filename or ".json" in filename or ".yml" in filename or ".motdiff" in filename):
+        ext = os.path.splitext(filename)[1].replace(".","")
+        if (ext in exclude):
             continue
         #Only include model folders if using file addition
         #if ("model" in trimmedName and not newDir and not ".nuanmb" in filename):
@@ -381,7 +384,6 @@ def ShareAnims():
                     else:
                         #Don't use share-to-add on new files
                         if (FileInVanilla(value)):
-                            root.data["share-to-added"][value] = []
                             currentSlotAsInt = int(root.currentSlot[2:4])
                             for i in range(8):
                                 if (i == currentSlotAsInt):
@@ -390,6 +392,10 @@ def ShareAnims():
                                     newValue = value.replace("_"+root.currentSlot.replace("/",""),"_c0"+str(i))
                                 else:
                                     newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
+                                if value == newValue:
+                                    continue
+                                if not value in root.data["share-to-added"]:
+                                    root.data["share-to-added"][value] = []
                                 root.data["share-to-added"][value].append(newValue)
 
 def FinishJSON():
