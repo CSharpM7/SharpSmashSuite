@@ -417,8 +417,8 @@ def FinishJSON():
         del root.data["new-dir-infos"]
         del root.data["new-dir-infos-base"]
     elif (root.modType == "fighter"):
-        messagebox.showwarning(root.title(),"Folder addition was used for "+entryName+"; LazyConfig does not support Additional Slots. Please use ReslotterGUI instead.")
-        webbrowser.open("https://github.com/CSharpM7/reslotter")
+        messagebox.showwarning(root.title(),"Folder addition was used for "+root.searchDir+"; LazyConfig does not support Additional Slots. Please use ReslotterGUI instead.")
+        #webbrowser.open("https://github.com/CSharpM7/reslotter")
     elif (root.modType == "stage"):
         del root.data["new-dir-infos-base"]
 

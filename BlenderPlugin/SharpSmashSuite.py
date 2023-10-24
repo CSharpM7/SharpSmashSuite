@@ -621,6 +621,7 @@ class SharpSmashSuite_OT_RenameMaterial_confirm(Operator):
                     imageBaseName = "/common/shader/sfxPBS/default_White"
                     if (imageNode is not None):
                         textureName = getBasename(imageNode)
+                        textureName = os.path.splitext(textureName)[0]
                     else:
                         continue
                     print(m.material.name+"("+imageNode.name+"):"+textureName)
