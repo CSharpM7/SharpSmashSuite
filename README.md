@@ -8,6 +8,8 @@ Tested on Windows, but should work on most OSs that can run Python 3.9+
 
 Python 3.9 - Used everywhere in this suite
 
+Blender - Verified on 3.3.1
+
 [img2nutexb](https://github.com/jam1garner/img2nutexb) - Program required for using img2nutexbGUI
 
 [ssbh\_data\_py](https://github.com/ScanMountGoat/ssbh_data_py) - Running MagicModel. You'll need to use the `python -m pip install ssbh_data_py` command in command prompt to install 
