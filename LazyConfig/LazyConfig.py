@@ -30,7 +30,7 @@ root = Tk()
 root.title("Lazy Config")
 root.withdraw()
 
-exclude = ["xml","json","yml","yaml","motdiff","txt"]
+exclude = ["xml","json","yml","yaml","motdiff","txt","png","dds"]
 
 #open folder dialogue
 def setsearchDir():

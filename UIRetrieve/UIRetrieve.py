@@ -244,6 +244,8 @@ def GetModName():
             desiredName = os.path.basename(modsubfolder[0])
             if (desiredName == "common" and len(modsubfolder)>1):
                 return os.path.basename(modsubfolder[1])
+            elif desiredName == "battlefield_s":
+                return "battlefields"
             else:
                 return desiredName
     return ""
