@@ -278,6 +278,22 @@ def AddEntry(m):
             root.canClone = True
         elif (root.currentSlot != fighterSlot):
             root.canClone = False
+        if (fighterName == "popo"):
+            root.CloneFromIcie = fighterName
+            root.CloneToIcie = "nana"
+            root.Icies += 1
+        elif (fighterName == "nana"):
+            root.CloneFromIcie = fighterName
+            root.CloneToIcie = "popo"
+            root.Icies += 1
+        if (fighterName == "eflame"):
+            root.CloneFromAegis = fighterName
+            root.CloneToAegis = "elight"
+            root.Aegis += 1
+        elif (fighterName == "elight"):
+            root.CloneFromAegis = fighterName
+            root.CloneToAegis = "eflame"
+            root.Aegis += 1
 
     #if entryName doesn't already exist, add it
     if (not entryName in root.addFiles):
@@ -331,6 +347,12 @@ def ScanFolders():
 
     root.currentSlot = ""
     root.canClone = False
+    root.CloneFromIcie = ""
+    root.CloneToIcie = ""
+    root.Icies = 0
+    root.CloneToAegis = False
+    root.CloneFromAegis = False
+    root.Aegis = 0
     root.hasAnims = False
 
     #for each model folder, gather the folders
@@ -369,6 +391,27 @@ def CloneSlots():
                         newValue = value.replace(root.currentSlot+"/","/c0"+str(i)+"/")
                         root.addFiles[newKey].append(newValue)
 
+def CloneCharacters():
+    if (root.Icies == 1):
+        res = messagebox.askquestion(root.title(), "Make copies of "+root.currentSlot+"'s config data across Popo/Nana?")
+        if res == 'yes':
+            CloneCharactersHelper(root.CloneFromIcie,root.CloneToIcie)
+    if (root.Aegis == 1):
+        res = messagebox.askquestion(root.title(), "Make copies of "+root.currentSlot+"'s config data across Pyra/Mythra?")
+        if res == 'yes':
+            CloneCharactersHelper(root.CloneFromAegis,root.CloneToAegis)
+
+def CloneCharactersHelper(source,dest):
+    originalFiles = root.addFiles.copy()
+    for currentKey in list(originalFiles):
+        if "effect" in currentKey:
+            continue
+        newKey = currentKey.replace("fighter/"+source,"fighter/"+dest)
+        root.addFiles[newKey] = []
+        for value in originalFiles.get(currentKey):
+            newValue = value.replace("fighter/"+source,"fighter/"+dest)
+            root.addFiles[newKey].append(newValue)
+
 def ShareAnims():
     if (root.hasAnims):
         shareAdded = messagebox.askquestion(root.title(), 'Use share-to-added for animations? (Otherwise use unshare-blacklist)')
@@ -397,6 +440,8 @@ def ShareAnims():
                                 if not value in root.data["share-to-added"]:
                                     root.data["share-to-added"][value] = []
                                 root.data["share-to-added"][value].append(newValue)
+def SortList(dict):
+    return {key: value for key, value in sorted(dict.items())}
 
 def FinishJSON():
     #Remove any files that are in vanilla if cloning wasn't used
@@ -416,20 +461,32 @@ def FinishJSON():
     if (not root.folderAddition):
         del root.data["new-dir-infos"]
         del root.data["new-dir-infos-base"]
-    elif (root.modType == "fighter"):
-        messagebox.showwarning(root.title(),"Folder addition was used for "+root.searchDir+"; LazyConfig does not support Additional Slots. Please use ReslotterGUI instead.")
-        #webbrowser.open("https://github.com/CSharpM7/reslotter")
-    elif (root.modType == "stage"):
-        del root.data["new-dir-infos-base"]
+    else:
+        root.data["new-dir-infos"] = SortList(root.data["new-dir-infos"])
+        if (root.modType == "stage"):
+            del root.data["new-dir-infos-base"]
+        else:
+            root.data["new-dir-infos-base"] = SortList(root.data["new-dir-infos-base"])
+            if (root.modType == "fighter"):
+                messagebox.showwarning(root.title(),"Folder addition was used for "+root.searchDir+"; LazyConfig does not support Additional Slots. Please use ReslotterGUI instead.")
+                #webbrowser.open("https://github.com/CSharpM7/reslotter")
+
 
     if len(root.data["unshare-blacklist"]) == 0:
         del root.data["unshare-blacklist"]
+    else:
+        root.data["unshare-blacklist"] = SortList(root.data["unshare-blacklist"])
 
     if len(root.data["share-to-added"]) == 0:
         del root.data["share-to-added"]
+    else:
+        root.data["share-to-added"] = SortList(root.data["share-to-added"])
 
     if len(root.data["new-dir-files"]) == 0:
         del root.data["new-dir-files"]
+    else:
+        root.data["new-dir-files"] = SortList(root.data["new-dir-files"])
+
 
 
     #create configJson file
@@ -455,6 +512,7 @@ def Main():
     ScanFolders()
     ShareAnims()
     CloneSlots()
+    CloneCharacters()
     FinishJSON()
 
 Main()
