@@ -440,8 +440,8 @@ def ShareAnims():
                                 if not value in root.data["share-to-added"]:
                                     root.data["share-to-added"][value] = []
                                 root.data["share-to-added"][value].append(newValue)
-def SortList(dict):
-    return {key: value for key, value in sorted(dict.items())}
+def SortDictionary(data):
+    return {key: value for key, value in sorted(data.items())}
 
 def FinishJSON():
     #Remove any files that are in vanilla if cloning wasn't used
@@ -462,11 +462,12 @@ def FinishJSON():
         del root.data["new-dir-infos"]
         del root.data["new-dir-infos-base"]
     else:
-        root.data["new-dir-infos"] = SortList(root.data["new-dir-infos"])
+        if len(root.data["new-dir-infos"]) > 1:
+            root.data["new-dir-infos"] = sorted(root.data["new-dir-infos"])
         if (root.modType == "stage"):
             del root.data["new-dir-infos-base"]
         else:
-            root.data["new-dir-infos-base"] = SortList(root.data["new-dir-infos-base"])
+            root.data["new-dir-infos-base"] = sorted(root.data["new-dir-infos-base"])
             if (root.modType == "fighter"):
                 messagebox.showwarning(root.title(),"Folder addition was used for "+root.searchDir+"; LazyConfig does not support Additional Slots. Please use ReslotterGUI instead.")
                 #webbrowser.open("https://github.com/CSharpM7/reslotter")
@@ -475,17 +476,17 @@ def FinishJSON():
     if len(root.data["unshare-blacklist"]) == 0:
         del root.data["unshare-blacklist"]
     else:
-        root.data["unshare-blacklist"] = SortList(root.data["unshare-blacklist"])
+        root.data["unshare-blacklist"] = sorted(root.data["unshare-blacklist"])
 
     if len(root.data["share-to-added"]) == 0:
         del root.data["share-to-added"]
     else:
-        root.data["share-to-added"] = SortList(root.data["share-to-added"])
+        root.data["share-to-added"] = SortDictionary(root.data["share-to-added"])
 
     if len(root.data["new-dir-files"]) == 0:
         del root.data["new-dir-files"]
     else:
-        root.data["new-dir-files"] = SortList(root.data["new-dir-files"])
+        root.data["new-dir-files"] = SortDictionary(root.data["new-dir-files"])
 
 
 
