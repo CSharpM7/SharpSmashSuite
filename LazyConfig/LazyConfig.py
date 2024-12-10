@@ -426,7 +426,7 @@ def ShareAnims():
                             root.data["unshare-blacklist"].append(value)
                     else:
                         #Don't use share-to-add on new files
-                        if (FileInVanilla(value)):
+                        if (FileInVanilla(value) or root.modType == "fighter"):
                             currentSlotAsInt = int(root.currentSlot[2:4])
                             for i in range(8):
                                 if (i == currentSlotAsInt):
