@@ -525,9 +525,11 @@ class SharpSmashSuite_OT_join_confirm(Operator):
             bpy.ops.object.select_all(action='DESELECT')
 
             # one of the objects to join
-            ctx['active_object'] = objs[0]
-            ctx['selected_editable_objects'] = objs
-            #report(self,{'INFO'}, "True Name:"+trueName+" Name:"+objs[0].name)
+            #ctx['active_object'] = objs[0]
+            #ctx['selected_editable_objects'] = objs
+            bpy.context.view_layer.objects.active = objs[0]
+
+            report(self,{'INFO'}, "True Name:"+trueName+" Name:"+objs[0].name)
             for o in objs:
                 o.select_set(True)
                 report(self,{'INFO'}, "Obj Name:"+o.name)
