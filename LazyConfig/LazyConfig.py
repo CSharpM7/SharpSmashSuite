@@ -104,9 +104,10 @@ def InitJSON():
     root.data = {}
     root.data["new-dir-infos"] = []
     root.data["new-dir-infos-base"] = []
+    #root.data["share-to-vanilla"] = {}
+    root.data["unshare-blacklist"] = []
     root.data["new-dir-files"] = {}
     root.data["share-to-added"] = {}
-    root.data["unshare-blacklist"] = []
     root.addFiles = root.data["new-dir-files"]
     root.addFolders = root.data["new-dir-infos"]
 

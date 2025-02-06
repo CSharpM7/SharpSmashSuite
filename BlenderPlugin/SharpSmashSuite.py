@@ -520,23 +520,27 @@ class SharpSmashSuite_OT_join_confirm(Operator):
                 value.append(obj)
                 
         
+        ctx = bpy.context.copy()
         for trueName, objs in objectsByName.items():
-                
-            ctx = bpy.context.copy()
+            bpy.ops.object.select_all(action='DESELECT')
 
             # one of the objects to join
             ctx['active_object'] = objs[0]
             ctx['selected_editable_objects'] = objs
+            #report(self,{'INFO'}, "True Name:"+trueName+" Name:"+objs[0].name)
+            for o in objs:
+                o.select_set(True)
+                report(self,{'INFO'}, "Obj Name:"+o.name)
             
             #join object and rename it to the material
-            bpy.ops.object.join(ctx)
-            newObject = ctx['active_object']
-            newObject.name = trueName
+            bpy.ops.object.join()
+            #newObject = ctx['active_object']
+            #newObject.name = trueName
             
             #remove excess materials
-            newObject.active_material_index = 0
-            for i in range(1,len(newObject.material_slots)):
-                bpy.ops.object.material_slot_remove({'object': newObject}) 
+            #newObject.active_material_index = 0
+            #for i in range(1,len(newObject.material_slots)):
+            #    bpy.ops.object.material_slot_remove({'object': newObject}) 
 
         report(self,{'INFO'}, "Objects joined")
         return {'FINISHED'}
